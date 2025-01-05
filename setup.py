@@ -17,7 +17,7 @@ setup(
     include_package_data=True,
     platforms='any',
     install_requires=[
-        'loguru~=0.7.2',
-        'urllib3~=1.26.9'
+        'loguru>=0.7.2',
+        'urllib3>=1.26.9'
     ]
 )
