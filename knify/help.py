@@ -5,7 +5,7 @@ def get_pip_name():
     return 'knify'
 
 def get_version():
-    return '1.6.88'
+    return '1.6.90'
 
 def print_version():
     print('''Knify %s
