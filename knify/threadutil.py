@@ -8,7 +8,7 @@ from . import logger
 def thread_partition_call(list_obj: list, func_, thread_num: int, partition_num: int) -> None:
     list_partition = listutil.partition(list_obj, partition_num)
     threads = []
-    logger.info("====================start====================")
+    logger.info("=================== start ===================")
     for index_, list_for_process in enumerate(list_partition):
         t = threading.Thread(target=func_, args=(list_for_process,))
         t.start()
@@ -17,6 +17,7 @@ def thread_partition_call(list_obj: list, func_, thread_num: int, partition_num:
             for t_ in threads:
                 t_.join()
             threads = []
-            if index_ <= len(list_for_process) - 1:
-                logger.info("====================start====================")
+            logger.info("===================  end  ===================")
+            if index_ < len(list_for_process) - 1:
+                logger.info("=================== start ===================")
 
