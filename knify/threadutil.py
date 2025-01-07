@@ -13,7 +13,7 @@ def thread_partition_call(list_obj: list, func_, thread_num: int, partition_num:
         t = threading.Thread(target=func_, args=(list_for_process,))
         t.start()
         threads.append(t)
-        if len(threads) == thread_num:
+        if len(threads) == thread_num or index_ == len(list_partition) - 1:
             for t_ in threads:
                 t_.join()
             threads = []
