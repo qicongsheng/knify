@@ -5,6 +5,7 @@ import threading, time
 from . import listutil
 from . import logger
 
+
 def thread_partition_call(list_obj: list, func_, thread_num: int, partition_num: int) -> None:
     list_partition = listutil.partition(list_obj, partition_num)
     threads = []
@@ -22,4 +23,3 @@ def thread_partition_call(list_obj: list, func_, thread_num: int, partition_num:
                 time.sleep(0.5)
                 print()
                 logger.info("=================== start ===================")
-
