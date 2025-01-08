@@ -18,8 +18,8 @@ def thread_partition_call(list_obj: list, func_, thread_num: int, partition_num:
                 t_.join()
             threads = []
             logger.info("===================  end  ===================")
-            time.sleep(0.5)
-            print()
             if index_ < len(list_partition) - 1:
+                time.sleep(0.5)
+                print()
                 logger.info("=================== start ===================")
 
