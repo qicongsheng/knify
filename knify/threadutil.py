@@ -1,9 +1,12 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
 # Author: qicongsheng
-import threading, time, datetime
-from . import listutil
+import datetime
+import threading
+import time
+
 from . import dateutil
+from . import listutil
 from . import logger
 
 task_lock = threading.Lock()
