@@ -5,6 +5,7 @@ import datetime
 import time
 
 FORMAT_DATE_YYMMDD = "%Y-%m-%d"
+FORMAT_DATE_HMS = "%H:%M:%S"
 FORMAT_DATE_YYMMDDHMS = "%Y-%m-%d %H:%M:%S"
 FORMAT_DATE_YYMMDDHMSF = "%Y-%m-%d %H:%M:%S.%f"
 
@@ -14,6 +15,8 @@ def now() -> datetime:
 
 
 def date_to_str(date_obj: datetime, format: str = FORMAT_DATE_YYMMDDHMS) -> str:
+    if type(date_obj) == datetime.timedelta:
+        return (datetime.datetime(1970, 1, 1) + date_obj).strftime(format)
     return date_obj.strftime(format)
 
 
