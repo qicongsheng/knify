@@ -72,3 +72,9 @@ def read_excel(file_path: str, sheet: str | int | None = 0, headers: list[Header
         if objutil.has_keys(result):
             results.append(result)
     return results
+
+
+def read_headers(file_path: str, sheet: str | int | None = 0, header_row: int = 0):
+    workbook = load_workbook(filename=file_path)
+    sheet_ = workbook[sheet] if isinstance(sheet, str) else workbook[workbook.sheetnames[sheet]]
+    return [cell.value for cell in sheet_[header_row + 1]]
