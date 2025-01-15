@@ -55,5 +55,6 @@ def read_excel(file_path: str, sheet: str | int | None = 0, headers: list[Header
                     cell_value = row[header_idx].value
                     cell_value = cell_value if header.transformer is None else header.transformer(row[header_idx].value)
                     result[col_name] = cell_value
+        if len(result.keys()) > 0:
             results.append(result)
     return results
