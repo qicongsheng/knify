@@ -17,7 +17,7 @@ def print_task():
     time_used = dateutil.now() - task_info['time_start']
     time_estimate = datetime.timedelta(
         seconds=time_used.total_seconds() * (task_info['total'] / task_info['processed']))
-    logger.info("Process: %.2f%% [%s/%s], Estimate: [%s/%s]" % (
+    logger.info("Process: %.2f%% [%s/%s], Estimate: [%s/%s]\r\n" % (
         task_info['processed'] / task_info['total'] * 100, task_info['processed'], task_info['total'],
         dateutil.date_to_str(time_used, dateutil.FORMAT_DATE_HMS),
         dateutil.date_to_str(time_estimate, dateutil.FORMAT_DATE_HMS)))
@@ -44,7 +44,7 @@ def thread_partition_call(list_obj: list, func_, thread_num: int, partition_num:
             for t_ in threads:
                 t_.join()
             threads = []
-            logger.info("===================  end  ===================\r\n")
+            logger.info("===================  end  ===================")
             print_task()
             if index_ < len(list_partition) - 1:
                 logger.info("=================== start ===================")
