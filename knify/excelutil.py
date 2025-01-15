@@ -31,13 +31,13 @@ class HeaderBuilder:
         return self.data
 
 
-def read_excel(file_path: str, sheet: str | int | None = 0, headers: list[Header] | None = None, skip_rows: int = 0):
+def read_excel(file_path: str, sheet: str | int | None = 0, headers: list[Header] | None = None, start_row: int = 1):
     results = []
     workbook = load_workbook(filename=file_path)
     sheet_ = workbook[sheet] if isinstance(sheet, str) else workbook[workbook.sheetnames[sheet]]
     headers_ = [cell.value for cell in sheet_[1]]
     for row_idx, row in enumerate(sheet_.rows):
-        if row_idx < skip_rows:
+        if row_idx < start_row:
             continue
         result = {}
         for header_idx, header_ in enumerate(headers_):
