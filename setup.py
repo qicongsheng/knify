@@ -19,6 +19,7 @@ setup(
     platforms='any',
     install_requires=[
         'loguru',
-        'urllib3'
+        'urllib3',
+        'openpyxl'
     ]
 )
