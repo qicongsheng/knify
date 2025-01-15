@@ -46,7 +46,8 @@ class HeaderBuilder:
         return self.headers
 
 
-def read_excel(file_path: str, sheet: str | int | None = 0, headers: list[Header] | None = None, start_row: int = 1, header_row: int = 0):
+def read_excel(file_path: str, sheet: str | int | None = 0, headers: list[Header] | None = None, start_row: int = 1,
+               header_row: int = 0):
     results = []
     workbook = load_workbook(filename=file_path)
     sheet_ = workbook[sheet] if isinstance(sheet, str) else workbook[workbook.sheetnames[sheet]]
