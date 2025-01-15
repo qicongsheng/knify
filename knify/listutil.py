@@ -1,10 +1,19 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
 # Author: qicongsheng
+from collections import defaultdict
+from typing import Callable
 
 
-def partition(list_obj: list, partition_size):
+def partition(list_obj: list, partition_size: int) -> list[object]:
     return [list_obj[i:i + partition_size] for i in range(0, len(list_obj), partition_size)]
+
+
+def groupby(list_obj: list, key: Callable[[object], object], value: Callable[[object], object] = lambda v_: v_):
+    grouped = defaultdict(list)
+    for obj in list_obj:
+        grouped[key(obj)].append(value(obj))
+    return grouped
 
 
 def is_empty(list_obj: list):
