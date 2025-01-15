@@ -16,25 +16,31 @@ class Header:
 class HeaderBuilder:
     def __init__(self):
         self.default_transformer = None
-        self.data = []
+        self.headers = []
 
     def set_default_transformer(self, transformer: Callable[[object], object] = None):
         self.default_transformer = transformer
         return self
 
-    def set_header_names(self, names: list[str] = None):
+    def set_names(self, names: list[str] = None):
         for index_, name in enumerate(names):
-            self.data.append(Header(len(self.data), name, self.default_transformer))
+            self.headers.append(Header(len(self.headers), name, self.default_transformer))
+        return self
+
+    def set_transformer(self, name: str, transformer: Callable[[object], object] = None):
+        for header in self.headers:
+            if name == header.name:
+                header.transformer = transformer
         return self
 
     def append(self, index: int = None, name: str | None = None, transformer: Callable[[object], object] = None):
-        target_tindex = index if index is not None else len(self.data)
+        target_tindex = index if index is not None else len(self.headers)
         target_transformer = transformer if transformer is not None else self.default_transformer
-        self.data.append(Header(target_tindex, name, target_transformer))
+        self.headers.append(Header(target_tindex, name, target_transformer))
         return self
 
     def to_headers(self):
-        return self.data
+        return self.headers
 
 
 def read_excel(file_path: str, sheet: str | int | None = 0, headers: list[Header] | None = None, start_row: int = 1):
