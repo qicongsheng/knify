@@ -46,11 +46,11 @@ class HeaderBuilder:
         return self.headers
 
 
-def read_excel(file_path: str, sheet: str | int | None = 0, headers: list[Header] | None = None, start_row: int = 1):
+def read_excel(file_path: str, sheet: str | int | None = 0, headers: list[Header] | None = None, start_row: int = 1, header_row: int = 0):
     results = []
     workbook = load_workbook(filename=file_path)
     sheet_ = workbook[sheet] if isinstance(sheet, str) else workbook[workbook.sheetnames[sheet]]
-    headers_ = [cell.value for cell in sheet_[start_row]]
+    headers_ = [cell.value for cell in sheet_[header_row + 1]]
     for row_idx, row in enumerate(sheet_.rows):
         if row_idx < start_row:
             continue
