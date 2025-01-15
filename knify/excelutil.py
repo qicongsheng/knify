@@ -22,9 +22,15 @@ class HeaderBuilder:
         self.default_transformer = transformer
         return self
 
-    def build(self, name: str | None, transformer: Callable[[object], object] = None):
+    def set_header_names(self, names: list[str] = None):
+        for index_, name in enumerate(names):
+            self.data.append(Header(len(self.data), name, self.default_transformer))
+        return self
+
+    def append(self, index: int = None, name: str | None = None, transformer: Callable[[object], object] = None):
+        target_tindex = index if index is not None else len(self.data)
         target_transformer = transformer if transformer is not None else self.default_transformer
-        self.data.append(Header(len(self.data), name, target_transformer))
+        self.data.append(Header(target_tindex, name, target_transformer))
         return self
 
     def to_headers(self):
