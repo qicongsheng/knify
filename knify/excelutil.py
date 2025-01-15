@@ -24,7 +24,7 @@ class HeaderBuilder:
 
     def set_names(self, names: list[str] = None):
         for index_, name in enumerate(names):
-            self.headers.append(Header(len(self.headers), name, self.default_transformer))
+            self.headers.append(Header(index_, name, self.default_transformer))
         return self
 
     def set_transformer(self, name: str, transformer: Callable[[object], object] = None):
