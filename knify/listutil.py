@@ -10,7 +10,7 @@ def partition(list_obj: list, partition_size: int) -> list[object]:
 
 
 def groupby(list_obj: list, key_func: Callable[[object], object],
-            value_func: Callable[[object], object] = lambda v_: v_):
+            value_func: Callable[[object], object] = lambda v_: v_) -> dict[object, object]:
     grouped = defaultdict(list)
     for obj in list_obj:
         grouped[key_func(obj)].append(value_func(obj))
