@@ -14,6 +14,10 @@ def now() -> datetime:
     return datetime.datetime.now()
 
 
+def now_str(format: str = FORMAT_YYMMDDHMS) -> str:
+    return date_to_str(now(), format)
+
+
 def date_to_str(date_obj: datetime, format: str = FORMAT_YYMMDDHMS) -> str:
     if type(date_obj) == datetime.timedelta:
         return (datetime.datetime(1970, 1, 1) + date_obj).strftime(format)
