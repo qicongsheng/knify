@@ -18,8 +18,8 @@ def print_task():
         seconds=time_used.total_seconds() * (task_info['total'] / task_info['processed']))
     logger.info("Process: %.2f%% [%s/%s], Estimate: [%s/%s]\r\n" % (
         task_info['processed'] / task_info['total'] * 100, task_info['processed'], task_info['total'],
-        dateutil.date_to_str(time_used, dateutil.FORMAT_DATE_HMS),
-        dateutil.date_to_str(time_estimate, dateutil.FORMAT_DATE_HMS)))
+        dateutil.date_to_str(time_used, dateutil.FORMAT_HMS),
+        dateutil.date_to_str(time_estimate, dateutil.FORMAT_HMS)))
 
 
 def func_wrapper(list_objs_: list, func_) -> None:
