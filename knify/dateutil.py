@@ -4,10 +4,10 @@
 import datetime
 import time
 
-FORMAT_DATE_YYMMDD = "%Y-%m-%d"
-FORMAT_DATE_HMS = "%H:%M:%S"
-FORMAT_DATE_YYMMDDHMS = "%Y-%m-%d %H:%M:%S"
-FORMAT_DATE_YYMMDDHMSF = "%Y-%m-%d %H:%M:%S.%f"
+FORMAT_YYMMDD = "%Y-%m-%d"
+FORMAT_HMS = "%H:%M:%S"
+FORMAT_YYMMDDHMS = "%Y-%m-%d %H:%M:%S"
+FORMAT_YYMMDDHMSF = "%Y-%m-%d %H:%M:%S.%f"
 
 
 def now() -> datetime:
