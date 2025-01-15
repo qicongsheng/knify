@@ -32,7 +32,7 @@ def func_wrapper(list_objs_: list, _func_) -> None:
 def thread_partition_call(list_obj: list, _func_, thread_num: int, partition_num: int) -> None:
     list_partition = listutil.partition(list_obj, partition_num)
     threads = []
-    logger.info("===================== start =====================")
+    logger.info("==================== start ====================")
     task_info['total'] = len(list_obj)
     task_info['time_start'] = dateutil.now()
     for index_, list_for_process in enumerate(list_partition):
@@ -43,7 +43,7 @@ def thread_partition_call(list_obj: list, _func_, thread_num: int, partition_num
             for t_ in threads:
                 t_.join()
             threads = []
-            logger.info("=====================  end  =====================")
+            logger.info("====================  end  ====================")
             print_task()
             if index_ < len(list_partition) - 1:
-                logger.info("===================== start =====================")
+                logger.info("==================== start ====================")
