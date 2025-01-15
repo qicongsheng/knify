@@ -13,3 +13,7 @@ def is_empty(list_obj: list):
 
 def is_not_empty(list_obj: list):
     return list_obj is not None and len(list_obj) > 0
+
+
+def find_first(list_obj: list) -> object:
+    return list_obj[0] if list_obj is not None and len(list_obj) > 0 else None

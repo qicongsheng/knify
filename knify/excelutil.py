@@ -5,6 +5,9 @@ from typing import Callable
 
 from openpyxl.reader.excel import load_workbook
 
+from . import listutil
+from . import objutil
+
 
 class Header:
     def __init__(self, index: int, name: str | None, transformer: Callable[[object], object] = None):
@@ -18,28 +21,28 @@ class HeaderBuilder:
         self.default_transformer = None
         self.headers = []
 
-    def set_default_transformer(self, transformer: Callable[[object], object] = None):
+    def set_default_transformer(self, transformer: Callable[[object], object] = None) -> object:
         self.default_transformer = transformer
         return self
 
-    def set_names(self, names: list[str] = None):
+    def set_names(self, names: list[str] = None) -> object:
         for index_, name in enumerate(names):
             self.headers.append(Header(index_, name, self.default_transformer))
         return self
 
-    def set_transformer(self, name: str, transformer: Callable[[object], object] = None):
+    def set_transformer(self, name: str, transformer: Callable[[object], object] = None) -> object:
         for header in self.headers:
             if name == header.name:
                 header.transformer = transformer
         return self
 
-    def append(self, index: int, name: str | None, transformer: Callable[[object], object] = None):
-        target_tindex = index if index is not None else len(self.headers)
-        target_transformer = transformer if transformer is not None else self.default_transformer
-        self.headers.append(Header(target_tindex, name, target_transformer))
+    def append(self, index: int, name: str | None, transformer: Callable[[object], object] = None) -> object:
+        target_index = objutil.default_if_none(index, len(self.headers))
+        target_transformer = objutil.default_if_none(transformer, self.default_transformer)
+        self.headers.append(Header(target_index, name, target_transformer))
         return self
 
-    def to_headers(self):
+    def to_headers(self) -> list[Header]:
         return self.headers
 
 
@@ -54,19 +57,18 @@ def read_excel(file_path: str, sheet: str | int | None = 0, headers: list[Header
         result = {}
         for header_idx, header_ in enumerate(headers_):
             # 没有传入headers,使用默认header
-            if headers is None or len(headers) == 0:
+            if listutil.is_empty(headers):
                 result[header_] = row[header_idx].value
             # 传入了headers
             else:
-                target_headers = list(filter(lambda h_: h_.index == header_idx, headers))
-                header = target_headers[0] if target_headers is not None and len(target_headers) > 0 else None
+                header = listutil.find_first(list(filter(lambda h_: h_.index == header_idx, headers)))
                 if header is None:
                     continue
                 else:
-                    col_name = header.name if header.name is not None else header_
+                    col_name = objutil.default_if_none(header.name, header_)
                     cell_value = row[header_idx].value
                     cell_value = cell_value if header.transformer is None else header.transformer(row[header_idx].value)
                     result[col_name] = cell_value
-        if len(result.keys()) > 0:
+        if objutil.has_keys(result):
             results.append(result)
     return results
