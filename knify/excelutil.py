@@ -33,7 +33,7 @@ class HeaderBuilder:
                 header.transformer = transformer
         return self
 
-    def append(self, index: int = None, name: str | None = None, transformer: Callable[[object], object] = None):
+    def append(self, index: int, name: str | None, transformer: Callable[[object], object] = None):
         target_tindex = index if index is not None else len(self.headers)
         target_transformer = transformer if transformer is not None else self.default_transformer
         self.headers.append(Header(target_tindex, name, target_transformer))
