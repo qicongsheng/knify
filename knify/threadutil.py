@@ -22,21 +22,21 @@ def print_task():
         dateutil.date_to_str(time_estimate, dateutil.FORMAT_HMS)))
 
 
-def func_wrapper(list_objs_: list, func_) -> None:
-    func_(list_objs_)
+def func_wrapper(list_objs_: list, _func_) -> None:
+    _func_(list_objs_)
     task_lock.acquire()
     task_info['processed'] = task_info['processed'] + len(list_objs_)
     task_lock.release()
 
 
-def thread_partition_call(list_obj: list, func_, thread_num: int, partition_num: int) -> None:
+def thread_partition_call(list_obj: list, _func_, thread_num: int, partition_num: int) -> None:
     list_partition = listutil.partition(list_obj, partition_num)
     threads = []
     logger.info("=================== start ===================")
     task_info['total'] = len(list_obj)
     task_info['time_start'] = dateutil.now()
     for index_, list_for_process in enumerate(list_partition):
-        t = threading.Thread(target=func_wrapper, args=(list_for_process, func_))
+        t = threading.Thread(target=func_wrapper, args=(list_for_process, _func_))
         t.start()
         threads.append(t)
         if len(threads) == thread_num or index_ == len(list_partition) - 1:
