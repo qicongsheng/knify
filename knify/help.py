@@ -7,7 +7,7 @@ def get_pip_name():
 
 
 def get_version():
-    return '1.8.34'
+    return '1.8.35'
 
 
 def print_version():

@@ -3,7 +3,6 @@
 # Author: qicongsheng
 import datetime
 import threading
-import time
 
 from . import dateutil
 from . import listutil
