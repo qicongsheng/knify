@@ -50,7 +50,7 @@ def read_excel(file_path: str, sheet: str | int | None = 0, headers: list[Header
     results = []
     workbook = load_workbook(filename=file_path)
     sheet_ = workbook[sheet] if isinstance(sheet, str) else workbook[workbook.sheetnames[sheet]]
-    headers_ = [cell.value for cell in sheet_[1]]
+    headers_ = [cell.value for cell in sheet_[start_row]]
     for row_idx, row in enumerate(sheet_.rows):
         if row_idx < start_row:
             continue
