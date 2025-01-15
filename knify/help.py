@@ -7,9 +7,8 @@ def get_pip_name():
 
 
 def get_version():
-    return '1.8.38'
+    return '1.8.39'
 
 
 def print_version():
-    print('''Knify %s
-Development tools for python.''' % get_version())
+    print('Knify %s\r\nDevelopment tools for python.' % get_version())
