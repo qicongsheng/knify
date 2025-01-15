@@ -2,12 +2,13 @@
 # -*- coding:utf-8 -*-
 # Author: qicongsheng
 
+
 def get_pip_name():
     return 'knify'
 
 
 def get_version():
-    return '1.8.43'
+    return '1.8.44'
 
 
 def print_version():
