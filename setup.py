@@ -6,12 +6,12 @@ from setuptools import setup, find_packages
 from knify import help
 
 setup(
-    name=help.get_pip_name(),
+    name=help.get_name(),
     version=help.get_version(),
-    keywords=help.get_pip_name(),
+    keywords=help.get_name(),
     description='Development tools for python',
     license='MIT License',
-    url='https://github.com/qicongsheng/%s' % help.get_pip_name(),
+    url='https://github.com/qicongsheng/%s' % help.get_name(),
     author='qicongsheng',
     author_email='qicongsheng@outlook.com',
     packages=find_packages(),
