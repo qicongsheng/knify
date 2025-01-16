@@ -17,11 +17,11 @@ def groupby(list_obj: list, key_func: Callable[[object], object],
     return grouped
 
 
-def is_empty(list_obj: list):
+def is_empty(list_obj: list) -> bool:
     return list_obj is None or len(list_obj) == 0
 
 
-def is_not_empty(list_obj: list):
+def is_not_empty(list_obj: list) -> bool:
     return list_obj is not None and len(list_obj) > 0
 
 
