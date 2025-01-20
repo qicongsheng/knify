@@ -1,6 +1,11 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
 # Author: qicongsheng
+from types import SimpleNamespace
+
+
+def dic_to_obj(dic: dict) -> object:
+    return SimpleNamespace(**dic)
 
 
 def default_if_none(obj: object, default_value: object) -> object:
