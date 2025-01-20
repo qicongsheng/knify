@@ -12,6 +12,10 @@ def dic_to_obj(dic: dict, obj: object = None) -> object:
     return SimpleNamespace(**dic)
 
 
+def obj_to_dic(obj: object = None) -> object:
+    return vars(obj) if obj is not None else obj
+
+
 def default_if_none(obj: object, default_value: object) -> object:
     return default_value if obj is None or obj == '' else obj
 
