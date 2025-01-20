@@ -1,14 +1,12 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
 # Author: qicongsheng
-
-
 def get_name():
     return 'knify'
 
 
 def get_version():
-    return '1.8.65'
+    return '1.8.66'
 
 
 def print_version():

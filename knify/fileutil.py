@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
 # Author: qicongsheng
-
-
 def read_to_string(file_path: str, encoding: str = 'utf-8') -> str:
     with open(file_path, 'r', encoding=encoding) as file:
         return file.read()
