@@ -4,7 +4,11 @@
 from types import SimpleNamespace
 
 
-def dic_to_obj(dic: dict) -> object:
+def dic_to_obj(dic: dict, obj: object = None) -> object:
+    if obj is not None:
+        for key, value in dic.items():
+            setattr(obj, key, value)
+        return obj
     return SimpleNamespace(**dic)
 
 
