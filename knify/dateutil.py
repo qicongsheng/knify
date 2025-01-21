@@ -36,9 +36,13 @@ def date_to_str(date_obj: datetime, format: str = FORMAT_YYMMDDHMS):
     return date_obj.strftime(format)
 
 
-def to_timezone(date_obj: datetime, timezone: str = TIMEZONE_UTC):
+def date_as_timezone(date_obj: datetime, timezone: str = TIMEZONE_UTC):
     zone = pytz.timezone(timezone)
     return date_obj.astimezone(zone) if date_obj is not None else date_obj
+
+
+def str_as_timezone(str_obj: datetime, format: str = FORMAT_YYMMDDHMS, timezone: str = TIMEZONE_UTC):
+    return date_to_str(date_as_timezone(str_to_date(str_obj, format), timezone), format)
 
 
 def str_to_date(str_obj: str, format: str) -> datetime:
