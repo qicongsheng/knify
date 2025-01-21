@@ -55,3 +55,15 @@ def date_to_timestamp(date_obj: datetime):
     if date_obj is None:
         return None
     return time.mktime(date_obj.timetuple())
+
+
+def add_hours(date_obj: datetime, hours: int = 0):
+    return date_obj + datetime.timedelta(hours=hours) if date_obj is not None else date_obj
+
+
+def add_days(date_obj: datetime, days: int = 0):
+    return date_obj + datetime.timedelta(days=days) if date_obj is not None else date_obj
+
+
+def add_minutes(date_obj: datetime, minutes: int = 0):
+    return date_obj + datetime.timedelta(minutes=minutes) if date_obj is not None else date_obj
