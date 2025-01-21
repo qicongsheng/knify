@@ -18,6 +18,10 @@ def now_str(format: str = FORMAT_YYMMDDHMS) -> str:
     return date_to_str(now(), format)
 
 
+def date_str_reformat(str_obj: str, format_old: str, format_new: str = FORMAT_YYMMDDHMS) -> str:
+    return date_to_str(str_to_date(str_obj, format_old), format_new)
+
+
 def date_to_str(date_obj: datetime, format: str = FORMAT_YYMMDDHMS):
     if date_obj is None:
         return None
