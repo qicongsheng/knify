@@ -19,7 +19,7 @@ def now_str(format: str = FORMAT_YYMMDDHMS) -> str:
     return date_to_str(now(), format)
 
 
-def date_str_reformat(str_obj: str, format_old: str, format_new: str = FORMAT_YYMMDDHMS) -> str:
+def reformat(str_obj: str, format_old: str, format_new: str = FORMAT_YYMMDDHMS) -> str:
     return date_to_str(str_to_date(str_obj, format_old), format_new)
 
 
