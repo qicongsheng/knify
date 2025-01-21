@@ -8,6 +8,7 @@ FORMAT_YYMMDD = "%Y-%m-%d"
 FORMAT_HMS = "%H:%M:%S"
 FORMAT_YYMMDDHMS = "%Y-%m-%d %H:%M:%S"
 FORMAT_YYMMDDHMSF = "%Y-%m-%d %H:%M:%S.%f"
+FORMAT_YYMMDDHMS_STRICT = "%Y%m%d%H%M%S"
 
 
 def now() -> datetime:
