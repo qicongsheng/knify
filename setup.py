@@ -20,6 +20,7 @@ setup(
     install_requires=[
         'loguru',
         'urllib3',
-        'openpyxl'
+        'openpyxl',
+        'pytz'
     ]
 )
