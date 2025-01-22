@@ -11,10 +11,18 @@ def partition(list_obj: list, partition_size: int) -> list[object]:
 
 def groupby(list_obj: list, key_func: Callable[[object], object],
             value_func: Callable[[object], object] = lambda v_: v_) -> dict[object, list[object]]:
-    grouped = defaultdict(list)
+    results = defaultdict(list)
     for obj in list_obj:
-        grouped[key_func(obj)].append(value_func(obj))
-    return grouped
+        results[key_func(obj)].append(value_func(obj))
+    return results
+
+
+def to_map(list_obj: list, key_func: Callable[[object], object],
+           value_func: Callable[[object], object] = lambda v_: v_) -> dict[object, object]:
+    results = defaultdict(list)
+    for obj in list_obj:
+        results[key_func(obj)] = value_func(obj)
+    return results
 
 
 def is_empty(list_obj: list) -> bool:
