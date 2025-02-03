@@ -21,6 +21,7 @@ setup(
         'loguru',
         'urllib3',
         'openpyxl',
-        'pytz'
+        'pytz',
+        'requests'
     ]
 )
