@@ -20,9 +20,9 @@ def request(curl_command: str) -> Optional[requests.Response]:
         raise ValueError("Invalid curl command: URL not found")
     url = url_match.group(1)
 
-    # 提取headers
+    # 提取headers（支持--header和-H参数）
     headers = {}
-    header_matches = re.finditer(r"--header\s+['\"]([^:]+):\s*([^'\"]+)['\"]", curl_command)
+    header_matches = re.finditer(r"-(?:-header|H)\s+['\"]([^:]+):\s*([^'\"]+)['\"]", curl_command)
     for match in header_matches:
         headers[match.group(1).strip()] = match.group(2).strip()
 
