@@ -14,8 +14,8 @@ def request(curl_command: str) -> Optional[requests.Response]:
     # 移除换行符和多余的空格
     curl_command = " ".join(curl_command.split())
 
-    # 提取URL
-    url_match = re.search(r"--location\s+['\"]([^'\"]+)['\"]", curl_command)
+    # 提取URL（支持--location或直接curl后的URL）
+    url_match = re.search(r"(?:--location\s+)?['\"](https?://[^'\"]+)['\"]", curl_command)
     if not url_match:
         raise ValueError("Invalid curl command: URL not found")
     url = url_match.group(1)
@@ -41,7 +41,7 @@ def request(curl_command: str) -> Optional[requests.Response]:
     method = method_match.group(1) if method_match else ("POST" if data else "GET")
 
     # 处理--location参数（即-L参数）
-    follow_redirects = "--location" in curl_command
+    follow_redirects = "--location" in curl_command or "-L" in curl_command
 
     # 处理-k参数（忽略SSL验证）
     verify_ssl = not ("-k" in curl_command or "--insecure" in curl_command)
