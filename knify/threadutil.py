@@ -47,3 +47,12 @@ def thread_partition_call(list_obj: list, _func_, thread_num: int, partition_num
             print_task()
             if index_ < len(list_partition) - 1:
                 logger.info("==================== start ====================")
+
+
+def async_call(async_func, callback_func, *args, **kwargs):
+    def wrapper():
+        result = async_func(*args, **kwargs)
+        callback_func(result)
+
+    thread = threading.Thread(target=wrapper)
+    thread.start()
