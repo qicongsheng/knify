@@ -52,12 +52,13 @@ def thread_partition_call(list_obj: list, _func_, thread_num: int, partition_num
 
 def async_call(async_func, callback_func, *args, **kwargs):
     def wrapper():
-        result = {'data': None, 'error_msg': None}
+        result = None
+        error = None
         try:
-            result['data'] = async_func(*args, **kwargs)
+            result = async_func(*args, **kwargs)
         except:
-            result['error_msg'] = traceback.format_exc()
-        callback_func(result)
+            error = traceback.format_exc()
+        callback_func(result, {'error': error})
 
     thread = threading.Thread(target=wrapper)
     thread.start()
