@@ -3,6 +3,7 @@
 # Author: qicongsheng
 import datetime
 import threading
+import traceback
 
 from . import dateutil
 from . import listutil
@@ -51,7 +52,11 @@ def thread_partition_call(list_obj: list, _func_, thread_num: int, partition_num
 
 def async_call(async_func, callback_func, *args, **kwargs):
     def wrapper():
-        result = async_func(*args, **kwargs)
+        result = {'data': None, 'error_msg': None}
+        try:
+            result['data'] = async_func(*args, **kwargs)
+        except:
+            result['error_msg'] = traceback.format_exc()
         callback_func(result)
 
     thread = threading.Thread(target=wrapper)
