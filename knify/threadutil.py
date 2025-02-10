@@ -58,7 +58,7 @@ def async_call(async_func, callback_func, *args, **kwargs):
             result = async_func(*args, **kwargs)
         except:
             error = traceback.format_exc()
-        callback_func(result, **{'error': error})
+        callback_func(*result, **{'error': error})
 
     thread = threading.Thread(target=wrapper)
     thread.start()
