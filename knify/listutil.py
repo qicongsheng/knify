@@ -2,15 +2,15 @@
 # -*- coding:utf-8 -*-
 # Author: qicongsheng
 from collections import defaultdict
-from typing import Callable
+from typing import Callable, Dict, List
 
 
-def partition(list_obj: list, partition_size: int) -> list[object]:
+def partition(list_obj: list, partition_size: int) -> List[object]:
     return [list_obj[i:i + partition_size] for i in range(0, len(list_obj), partition_size)]
 
 
 def groupby(list_obj: list, key_func: Callable[[object], object],
-            value_func: Callable[[object], object] = lambda v_: v_) -> dict[object, list[object]]:
+            value_func: Callable[[object], object] = lambda v_: v_) -> Dict[object, List[object]]:
     results = defaultdict(list)
     for obj in list_obj:
         results[key_func(obj)].append(value_func(obj))
@@ -18,7 +18,7 @@ def groupby(list_obj: list, key_func: Callable[[object], object],
 
 
 def to_map(list_obj: list, key_func: Callable[[object], object],
-           value_func: Callable[[object], object] = lambda v_: v_) -> dict[object, object]:
+           value_func: Callable[[object], object] = lambda v_: v_) -> Dict[object, object]:
     results = defaultdict(list)
     for obj in list_obj:
         results[key_func(obj)] = value_func(obj)
