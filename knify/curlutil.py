@@ -90,7 +90,7 @@ def request(curl_command: str) -> Optional[requests.Response]:
         headers['Cookie'] = cookie.group(2)
 
     if header_cookies:
-        headers['Cookie'] = '; '.join([f'{key}:{value}' for key, value in context.cookies.items()])
+        headers['Cookie'] = '; '.join([f'{key}={value}' for key, value in context.cookies.items()])
 
     # 处理 --form/-F 和 --form-string
     files = None
