@@ -7,6 +7,7 @@ from typing import Optional
 
 import curlify
 import requests
+import uncurl
 
 from . import warnutil
 
