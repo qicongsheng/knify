@@ -19,7 +19,6 @@ def request(curl_command: str) -> Optional[requests.Response]:
     - --location/-L
     - --user-agent/-A
     - --cookie/-b
-    - --cookie-jar/-c
     - --form/-F
     - --form-string
     - --referer/-e
@@ -37,7 +36,6 @@ def request(curl_command: str) -> Optional[requests.Response]:
     location_pattern = re.compile(r'\s(--location|-L)\s', re.MULTILINE)
     user_agent_pattern = re.compile(r'\s(--user-agent|-A)\s+["\']?([^"\'\s]+)["\']?', re.MULTILINE)
     cookie_pattern = re.compile(r'\s(--cookie|-b)\s+["\']?([^"\'\s]+)["\']?', re.MULTILINE)
-    cookie_jar_pattern = re.compile(r'\s(--cookie-jar|-c)\s+["\']?([^"\'\s]+)["\']?', re.MULTILINE)
     form_pattern = re.compile(r'\s(--form|-F)\s+["\']?([^"\'\s]+)["\']?', re.MULTILINE)
     form_string_pattern = re.compile(r'\s--form-string\s+["\']?([^"\'\s]+)["\']?', re.MULTILINE)
     referer_pattern = re.compile(r'\s(--referer|-e)\s+["\']?([^"\'\s]+)["\']?', re.MULTILINE)
@@ -52,7 +50,6 @@ def request(curl_command: str) -> Optional[requests.Response]:
     follow_redirects = bool(location_pattern.search(curl_command))
     user_agent = user_agent_pattern.search(curl_command)
     cookie = cookie_pattern.search(curl_command)
-    cookie_jar = cookie_jar_pattern.search(curl_command)
     form = form_pattern.search(curl_command)
     form_string = form_string_pattern.search(curl_command)
     referer = referer_pattern.search(curl_command)
@@ -67,7 +64,6 @@ def request(curl_command: str) -> Optional[requests.Response]:
     curl_command = location_pattern.sub(' ', curl_command)
     curl_command = user_agent_pattern.sub(' ', curl_command)
     curl_command = cookie_pattern.sub(' ', curl_command)
-    curl_command = cookie_jar_pattern.sub(' ', curl_command)
     curl_command = form_pattern.sub(' ', curl_command)
     curl_command = form_string_pattern.sub(' ', curl_command)
     curl_command = referer_pattern.sub(' ', curl_command)
@@ -82,6 +78,7 @@ def request(curl_command: str) -> Optional[requests.Response]:
     url = context.url
     headers = context.headers
     data = context.data
+    header_cookies = context.cookies
     method = context.method.lower() if context.method else 'get'
 
     # 处理 --user-agent/-A
@@ -92,24 +89,8 @@ def request(curl_command: str) -> Optional[requests.Response]:
     if cookie:
         headers['Cookie'] = cookie.group(2)
 
-    # 处理 --cookie-jar/-c
-    if cookie_jar:
-        cookie_jar_path = cookie_jar.group(2)
-        # 在发送请求后保存 cookies 到文件
-        session = requests.Session()
-        response = session.request(
-            method,
-            url,
-            headers=headers,
-            data=data,
-            allow_redirects=follow_redirects,
-            verify=verify_ssl
-        )
-        # 保存 cookies 到文件
-        with open(cookie_jar_path, 'w') as f:
-            for cookie in session.cookies:
-                f.write(f"{cookie.name}={cookie.value}\n")
-        return response
+    if header_cookies:
+        headers['Cookie'] = '; '.join([f'{key}:{value}' for key, value in context.cookies.items()])
 
     # 处理 --form/-F 和 --form-string
     files = None
