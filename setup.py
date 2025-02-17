@@ -23,6 +23,7 @@ setup(
         'openpyxl',
         'pytz',
         'requests',
-        'curlify'
+        'curlify',
+        'uncurl'
     ]
 )
