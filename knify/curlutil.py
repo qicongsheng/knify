@@ -13,6 +13,24 @@ from . import warnutil
 
 
 def request(curl_command: str) -> Optional[requests.Response]:
+    """
+    解析 curl 命令并发送请求，支持以下参数：
+    - --insecure/-k
+    - --location/-L
+    - --user-agent/-A
+    - --cookie/-b
+    - --cookie-jar/-c
+    - --form/-F
+    - --form-string
+    - --referer/-e
+    - --user
+    - --output/-o
+    - --retry
+    - --connect-timeout
+    - --max-time
+    :param curl_command: curl 命令字符串
+    :return: 响应对象
+    """
     warnutil.disable_ssl_warnings()
     # 使用正则表达式匹配参数
     insecure_pattern = re.compile(r'\s(--insecure|-k)\s', re.MULTILINE)
