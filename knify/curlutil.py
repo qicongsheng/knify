@@ -5,6 +5,7 @@ import json
 import re
 from typing import Optional
 
+import curlify
 import requests
 
 from . import warnutil
@@ -56,3 +57,7 @@ def request(curl_command: str) -> Optional[requests.Response]:
         verify=verify_ssl
     )
     return response
+
+
+def to_curl(req):
+    return curlify.to_curl(req)

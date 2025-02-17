@@ -22,6 +22,7 @@ setup(
         'urllib3',
         'openpyxl',
         'pytz',
-        'requests'
+        'requests',
+        'curlify'
     ]
 )
