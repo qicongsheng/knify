@@ -27,6 +27,7 @@ def request(curl_command: str) -> Optional[requests.Response]:
     - --retry
     - --connect-timeout
     - --max-time
+    - --request/-X
     :param curl_command: curl 命令字符串
     :return: 响应对象
     """
@@ -44,6 +45,7 @@ def request(curl_command: str) -> Optional[requests.Response]:
     retry_pattern = re.compile(r'\s--retry\s+(\d+)', re.MULTILINE)
     connect_timeout_pattern = re.compile(r'\s--connect-timeout\s+(\d+)', re.MULTILINE)
     max_time_pattern = re.compile(r'\s--max-time\s+(\d+)', re.MULTILINE)
+    request_method_pattern = re.compile(r'\s(--request|-X)\s+([A-Za-z]+)', re.MULTILINE)  # 新增：解析 --request/-X 参数
 
     # 检查是否包含参数
     verify_ssl = not bool(insecure_pattern.search(curl_command))
@@ -58,6 +60,7 @@ def request(curl_command: str) -> Optional[requests.Response]:
     retry = retry_pattern.search(curl_command)
     connect_timeout = connect_timeout_pattern.search(curl_command)
     max_time = max_time_pattern.search(curl_command)
+    request_method = request_method_pattern.search(curl_command)  # 新增：获取请求方法
 
     # 移除参数，避免 uncurl 解析失败
     curl_command = insecure_pattern.sub(' ', curl_command)
@@ -72,6 +75,7 @@ def request(curl_command: str) -> Optional[requests.Response]:
     curl_command = retry_pattern.sub(' ', curl_command)
     curl_command = connect_timeout_pattern.sub(' ', curl_command)
     curl_command = max_time_pattern.sub(' ', curl_command)
+    curl_command = request_method_pattern.sub(' ', curl_command)  # 新增：移除 --request/-X 参数
 
     # 使用 uncurl 解析 curl 命令
     context = uncurl.parse_context(curl_command)
@@ -80,6 +84,10 @@ def request(curl_command: str) -> Optional[requests.Response]:
     data = context.data
     header_cookies = context.cookies
     method = context.method.lower() if context.method else 'get'
+
+    # 如果 --request/-X 参数存在，覆盖默认的请求方法
+    if request_method:
+        method = request_method.group(2).lower()  # 获取请求方法并转换为小写
 
     # 处理 --user-agent/-A
     if user_agent:
