@@ -36,7 +36,7 @@ def request(curl_command: str) -> Optional[requests.Response]:
     insecure_pattern = re.compile(r'\s(--insecure|-k)\s', re.MULTILINE)
     location_pattern = re.compile(r'\s(--location|-L)\s', re.MULTILINE)
     user_agent_pattern = re.compile(r'\s(--user-agent|-A)\s+["\']?([^"\'\s]+)["\']?', re.MULTILINE)
-    cookie_pattern = re.compile(r'\s(--cookie|-b)\s+["\']?([^"\'\s]+)["\']?', re.MULTILINE)
+    cookie_pattern = re.compile(r'\s(--cookie|-b)\s+["\']?([^"\']+)["\']?', re.MULTILINE)
     form_pattern = re.compile(r'\s(--form|-F)\s+["\']?([^"\'\s]+)["\']?', re.MULTILINE)
     form_string_pattern = re.compile(r'\s--form-string\s+["\']?([^"\'\s]+)["\']?', re.MULTILINE)
     referer_pattern = re.compile(r'\s(--referer|-e)\s+["\']?([^"\'\s]+)["\']?', re.MULTILINE)
