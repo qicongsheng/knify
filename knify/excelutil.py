@@ -241,7 +241,6 @@ def compare(file1_path, file2_path, output_path, key_column, sheet_index=0,
                 if val1 != val2:
                     target_col = 1 + col_idx * 2
                     result_ws.cell(current_row, target_col).fill = yellow_fill
-                    # result_ws.cell(current_row, target_col+1).fill = yellow_fill
         else:
             # 整行标黄逻辑
             for col_idx, h in enumerate(other_headers, 1):
