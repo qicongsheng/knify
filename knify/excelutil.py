@@ -252,8 +252,8 @@ def compare_(file1_path, file2_path, output_path, key_column, sheet_index=0,
             # 逐列比较差异
             for col_idx, h in enumerate(other_headers, 1):
                 idx = headers1.index(h)
-                val1 = row1[idx]
-                val2 = row2[idx]
+                val1 = None if row1[idx] == '' else row1[idx]
+                val2 = None if row2[idx] == '' else row2[idx]
                 if val1 != val2:
                     target_col = 1 + col_idx * 2
                     result_ws.cell(current_row, target_col).fill = yellow_fill
