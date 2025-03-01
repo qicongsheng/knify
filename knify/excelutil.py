@@ -2,6 +2,7 @@
 # -*- coding:utf-8 -*-
 # Author: qicongsheng
 from typing import Callable
+import os
 
 import xlrd
 from openpyxl import Workbook
@@ -167,7 +168,7 @@ def compare_(file1_path, file2_path, output_path, key_column, sheet_index=0,
     data2 = build_data_dict(data2_rows)
 
     # 创建结果工作簿
-    result_wb = Workbook()
+    result_wb = load_workbook(output_path) if os.path.exists(output_path) else Workbook()
     result_ws = result_wb.create_sheet(title=sheet_name, index=sheet_index)
 
     # ========== 构建表头 ==========
