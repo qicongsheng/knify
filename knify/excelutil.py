@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
 # Author: qicongsheng
-from typing import Callable
 import os
+from typing import Callable
 
 import xlrd
 from openpyxl import Workbook
@@ -11,13 +11,13 @@ from openpyxl.styles import PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 
 from . import listutil
-from . import objutil
 from . import logger
+from . import objutil
 
 
 class Header:
     def __init__(self, index: int, name: str | None,
-        transformer: Callable[[object], object] = None):
+                 transformer: Callable[[object], object] = None):
         self.index = index
         self.name = name
         self.transformer = transformer
@@ -29,7 +29,7 @@ class HeaderBuilder:
         self.headers = []
 
     def set_default_transformer(self,
-        transformer: Callable[[object], object] = None) -> object:
+                                transformer: Callable[[object], object] = None) -> object:
         self.default_transformer = transformer
         return self
 
@@ -39,14 +39,14 @@ class HeaderBuilder:
         return self
 
     def set_transformer(self, name: str,
-        transformer: Callable[[object], object] = None) -> object:
+                        transformer: Callable[[object], object] = None) -> object:
         for header in self.headers:
             if name == header.name:
                 header.transformer = transformer
         return self
 
     def append(self, index: int, name: str | None,
-        transformer: Callable[[object], object] = None) -> object:
+               transformer: Callable[[object], object] = None) -> object:
         target_index = objutil.default_if_none(index, len(self.headers))
         target_transformer = objutil.default_if_none(transformer,
                                                      self.default_transformer)
@@ -58,8 +58,8 @@ class HeaderBuilder:
 
 
 def read_excel(file_path: str, sheet: str | int | None = 0,
-    headers: list[Header] | None = None, start_row: int = 1,
-    header_row: int = 0) -> list[object]:
+               headers: list[Header] | None = None, start_row: int = 1,
+               header_row: int = 0) -> list[object]:
     results = []
     workbook = load_workbook(filename=file_path)
     sheet_ = workbook[sheet] if isinstance(sheet, str) else workbook[
@@ -91,7 +91,7 @@ def read_excel(file_path: str, sheet: str | int | None = 0,
 
 
 def read_headers(file_path: str, sheet: str | int | None = 0,
-    header_row: int = 0):
+                 header_row: int = 0):
     workbook = load_workbook(filename=file_path)
     sheet_ = workbook[sheet] if isinstance(sheet, str) else workbook[
         workbook.sheetnames[sheet]]
@@ -126,12 +126,13 @@ def load_excel_data(file_path, sheet_index):
 
 
 def compare(file1_path, file2_path, output_path, key_column, sheet_index=[0],
-    file1_alias="文件1", file2_alias="文件2"):
+            file1_alias="文件1", file2_alias="文件2"):
     for sheet_idx in sheet_index:
         compare_(file1_path, file2_path, output_path, key_column, sheet_idx, file1_alias, file2_alias)
 
+
 def compare_(file1_path, file2_path, output_path, key_column, sheet_index=0,
-    file1_alias="文件1", file2_alias="文件2"):
+             file1_alias="文件1", file2_alias="文件2"):
     yellow_fill = PatternFill(start_color='FFFF00', end_color='FFFF00',
                               fill_type='solid')
     header_fill = PatternFill(start_color='AFEEEE', end_color='AFEEEE',
