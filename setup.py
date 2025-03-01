@@ -24,6 +24,7 @@ setup(
         'pytz',
         'requests',
         'curlify',
-        'uncurl'
+        'uncurl',
+        'xlrd'
     ]
 )
