@@ -168,8 +168,7 @@ def compare_(file1_path, file2_path, output_path, key_column, sheet_index=0,
 
     # 创建结果工作簿
     result_wb = Workbook()
-    result_wb.remove(result_wb.active)
-    result_ws = result_wb.create_sheet(title=sheet_name, index=sheet_index)  # 第一个位置
+    result_ws = result_wb.create_sheet(title=sheet_name, index=sheet_index)
 
     # ========== 构建表头 ==========
     # 第一行结构：主键列 + 合并列名
