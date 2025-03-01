@@ -11,11 +11,12 @@ from openpyxl.utils import get_column_letter
 
 from . import listutil
 from . import objutil
+from . import logger
 
 
 class Header:
     def __init__(self, index: int, name: str | None,
-                 transformer: Callable[[object], object] = None):
+        transformer: Callable[[object], object] = None):
         self.index = index
         self.name = name
         self.transformer = transformer
@@ -27,7 +28,7 @@ class HeaderBuilder:
         self.headers = []
 
     def set_default_transformer(self,
-                                transformer: Callable[[object], object] = None) -> object:
+        transformer: Callable[[object], object] = None) -> object:
         self.default_transformer = transformer
         return self
 
@@ -37,14 +38,14 @@ class HeaderBuilder:
         return self
 
     def set_transformer(self, name: str,
-                        transformer: Callable[[object], object] = None) -> object:
+        transformer: Callable[[object], object] = None) -> object:
         for header in self.headers:
             if name == header.name:
                 header.transformer = transformer
         return self
 
     def append(self, index: int, name: str | None,
-               transformer: Callable[[object], object] = None) -> object:
+        transformer: Callable[[object], object] = None) -> object:
         target_index = objutil.default_if_none(index, len(self.headers))
         target_transformer = objutil.default_if_none(transformer,
                                                      self.default_transformer)
@@ -56,8 +57,8 @@ class HeaderBuilder:
 
 
 def read_excel(file_path: str, sheet: str | int | None = 0,
-               headers: list[Header] | None = None, start_row: int = 1,
-               header_row: int = 0) -> list[object]:
+    headers: list[Header] | None = None, start_row: int = 1,
+    header_row: int = 0) -> list[object]:
     results = []
     workbook = load_workbook(filename=file_path)
     sheet_ = workbook[sheet] if isinstance(sheet, str) else workbook[
@@ -89,7 +90,7 @@ def read_excel(file_path: str, sheet: str | int | None = 0,
 
 
 def read_headers(file_path: str, sheet: str | int | None = 0,
-                 header_row: int = 0):
+    header_row: int = 0):
     workbook = load_workbook(filename=file_path)
     sheet_ = workbook[sheet] if isinstance(sheet, str) else workbook[
         workbook.sheetnames[sheet]]
@@ -103,7 +104,7 @@ def load_excel_data(file_path, sheet_index):
         sheet = wb.sheet_by_index(sheet_index)
         headers = sheet.row_values(0)
         data = [sheet.row_values(i) for i in range(1, sheet.nrows)]
-        return headers, data, None  # xls格式不获取列宽
+        return headers, data, None, sheet.name  # xls格式不获取列宽
     else:
         from openpyxl import load_workbook
         wb = load_workbook(file_path)
@@ -120,11 +121,16 @@ def load_excel_data(file_path, sheet_index):
                 column_widths.append(column_dim.width)
             else:
                 column_widths.append(8.43)  # Excel默认列宽
-        return headers, data, column_widths
+        return headers, data, column_widths, wb.sheetnames[sheet_index]
 
 
-def compare(file1_path, file2_path, output_path, key_column, sheet_index=0,
-            file1_alias="文件1", file2_alias="文件2"):
+def compare(file1_path, file2_path, output_path, key_column, sheet_index=[0],
+    file1_alias="文件1", file2_alias="文件2"):
+    for sheet_idx in sheet_index:
+        compare_(file1_path, file2_path, output_path, key_column, sheet_idx, file1_alias, file2_alias)
+
+def compare_(file1_path, file2_path, output_path, key_column, sheet_index=0,
+    file1_alias="文件1", file2_alias="文件2"):
     yellow_fill = PatternFill(start_color='FFFF00', end_color='FFFF00',
                               fill_type='solid')
     header_fill = PatternFill(start_color='AFEEEE', end_color='AFEEEE',
@@ -136,9 +142,10 @@ def compare(file1_path, file2_path, output_path, key_column, sheet_index=0,
         bottom=Side(style='thin')
     )
 
+    logger.info(f"开始处理sheet:{sheet_index}")
     # 加载数据和列宽
-    headers1, data1_rows, col_widths1 = load_excel_data(file1_path, sheet_index)
-    headers2, data2_rows, _ = load_excel_data(file2_path, sheet_index)
+    headers1, data1_rows, col_widths1, sheet_name = load_excel_data(file1_path, sheet_index)
+    headers2, data2_rows, _, sheet_name = load_excel_data(file2_path, sheet_index)
 
     if headers1 != headers2:
         header_diff = []
@@ -161,8 +168,8 @@ def compare(file1_path, file2_path, output_path, key_column, sheet_index=0,
 
     # 创建结果工作簿
     result_wb = Workbook()
-    result_ws = result_wb.active
-    result_ws.title = "对比结果"
+    result_wb.remove(result_wb.active)
+    result_ws = result_wb.create_sheet(title=sheet_name, index=sheet_index)  # 第一个位置
 
     # ========== 构建表头 ==========
     # 第一行结构：主键列 + 合并列名
@@ -208,7 +215,11 @@ def compare(file1_path, file2_path, output_path, key_column, sheet_index=0,
     # ========== 数据对比处理 ==========
     all_keys = sorted(set(data1.keys()) | set(data2.keys()))
 
-    for key in all_keys:
+    for key_idx, key in enumerate(all_keys):
+        if key_idx % 100 == 0:
+            logger.info(f"对比进度:{key_idx}/{len(all_keys)}")
+        if key_idx == len(all_keys) - 1:
+            logger.info(f"对比进度:{len(all_keys)}/{len(all_keys)}")
         row1 = data1.get(key)
         row2 = data2.get(key)
 
