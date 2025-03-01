@@ -96,18 +96,18 @@ def read_headers(file_path: str, sheet: str | int | None = 0,
     return [cell.value for cell in sheet_[header_row + 1]]
 
 
-def load_excel_data(file_path):
+def load_excel_data(file_path, sheet_index):
     """通用Excel加载函数，支持xls和xlsx格式"""
     if file_path.endswith('.xls'):
         wb = xlrd.open_workbook(file_path)
-        sheet = wb.sheet_by_index(0)
+        sheet = wb.sheet_by_index(sheet_index)
         headers = sheet.row_values(0)
         data = [sheet.row_values(i) for i in range(1, sheet.nrows)]
         return headers, data, None  # xls格式不获取列宽
     else:
         from openpyxl import load_workbook
-        wb = load_workbook(file_path, read_only=True)
-        sheet = wb.active
+        wb = load_workbook(file_path)
+        sheet = wb[wb.sheetnames[sheet_index]]
         headers = [cell.value for cell in next(sheet.iter_rows())]
         data = [[cell.value for cell in row] for row in sheet.iter_rows(min_row=2)]
 
@@ -123,7 +123,7 @@ def load_excel_data(file_path):
         return headers, data, column_widths
 
 
-def compare(file1_path, file2_path, output_path, key_column,
+def compare(file1_path, file2_path, output_path, key_column, sheet_index=0,
             file1_alias="文件1", file2_alias="文件2"):
     yellow_fill = PatternFill(start_color='FFFF00', end_color='FFFF00',
                               fill_type='solid')
@@ -137,8 +137,8 @@ def compare(file1_path, file2_path, output_path, key_column,
     )
 
     # 加载数据和列宽
-    headers1, data1_rows, col_widths1 = load_excel_data(file1_path)
-    headers2, data2_rows, _ = load_excel_data(file2_path)
+    headers1, data1_rows, col_widths1 = load_excel_data(file1_path, sheet_index)
+    headers2, data2_rows, _ = load_excel_data(file2_path, sheet_index)
 
     if headers1 != headers2:
         raise ValueError("两个文件的表头不一致")
