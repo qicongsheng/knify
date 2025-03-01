@@ -141,7 +141,11 @@ def compare(file1_path, file2_path, output_path, key_column, sheet_index=0,
     headers2, data2_rows, _ = load_excel_data(file2_path, sheet_index)
 
     if headers1 != headers2:
-        raise ValueError("两个文件的表头不一致")
+        header_diff = []
+        for h_idx, h_value in enumerate(headers1):
+            if h_value != headers2[h_idx]:
+                header_diff.append(h_value)
+        raise ValueError("两个文件的表头不一致:%s" % header_diff)
     if key_column not in headers1:
         raise ValueError(f"主键列 {key_column} 不存在")
 
