@@ -311,7 +311,7 @@ def json_to_excel(json_data, excel_file):
         headers.update(item_.keys())
 
     # 写入表头
-    for col_num, header in enumerate(headers, 1):
+    for col_num, header in enumerate(sorted(headers), 1):
         sheet.cell(row=1, column=col_num, value=header)
 
     def clean_string(str_value):
