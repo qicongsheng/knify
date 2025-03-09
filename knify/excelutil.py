@@ -300,22 +300,11 @@ def json_file_to_excel(json_file, excel_file, skip_keys=None, sort_headers=True)
         data = json.load(f)  # 解析JSON数据
         json_to_excel(data, excel_file, skip_keys, sort_headers)
 
-def json_to_excel(json_file, excel_file, skip_keys=None, sort_headers=True):
-    """
-    将JSON文件中的数据转换为Excel文件
-    :param json_file: JSON文件的路径（例如：'data.json'）
-    :param excel_file: 输出的Excel文件路径（例如：'output.xlsx'）
-    :param skip_keys: 需要跳过的键名列表（例如：['key1', 'key2']）
-    :param sort_headers: 是否对表头进行排序，默认为 True
-    """
+def json_to_excel(json_data, excel_file, skip_keys=None, sort_headers=True):
     if skip_keys is None:
         skip_keys = set()  # 如果没有提供 skip_keys，默认为空集合
     else:
         skip_keys = set(skip_keys)  # 将列表转换为集合，便于快速查找
-
-    # 从JSON文件中读取数据
-    with open(json_file, 'r', encoding='utf-8') as f:
-        data = json.load(f)  # 解析JSON数据
 
     # 创建一个新的工作簿和工作表
     workbook = Workbook()
@@ -323,7 +312,7 @@ def json_to_excel(json_file, excel_file, skip_keys=None, sort_headers=True):
 
     # 收集所有可能的键（合并所有对象的键）
     all_keys = set()
-    for item in data:
+    for item in json_data:
         all_keys.update(item.keys())  # 将每个对象的键添加到集合中
 
     # 过滤掉需要跳过的键
@@ -347,7 +336,7 @@ def json_to_excel(json_file, excel_file, skip_keys=None, sort_headers=True):
         return value
 
     # 写入数据
-    for row_num, item in enumerate(data, 2):
+    for row_num, item in enumerate(json_data, 2):
         for col_num, header in enumerate(headers, 1):
             # 如果当前对象没有该键，则写入空值
             value = item.get(header, "")
