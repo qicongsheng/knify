@@ -298,7 +298,7 @@ def json_file_to_excel(json_file, excel_file, skip_keys=None):
     # 从JSON文件中读取数据
     with open(json_file, 'r', encoding='utf-8') as f:
         data = json.load(f)  # 解析JSON数据
-        json_to_excel(data, excel_file, skip_keys=None)
+        json_to_excel(data, excel_file, skip_keys)
 
 
 def json_to_excel(json_data, excel_file, skip_keys=None):
