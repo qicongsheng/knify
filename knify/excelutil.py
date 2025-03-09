@@ -3,8 +3,8 @@
 # Author: qicongsheng
 import json
 import os
-from typing import Callable
 import re
+from typing import Callable
 
 import xlrd
 from openpyxl import Workbook
