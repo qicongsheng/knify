@@ -289,7 +289,7 @@ def compare_(file1_path, file2_path, output_path, key_column, sheet_index=0,
     result_wb.save(output_path)
 
 
-def json_file_to_excel(json_file, excel_file):
+def json_file_to_excel(json_file, excel_file, skip_keys=None):
     """
     将JSON文件中的数据转换为Excel文件
     :param json_file: JSON文件的路径（例如：'data.json'）
@@ -298,10 +298,11 @@ def json_file_to_excel(json_file, excel_file):
     # 从JSON文件中读取数据
     with open(json_file, 'r', encoding='utf-8') as f:
         data = json.load(f)  # 解析JSON数据
-        json_to_excel(data, excel_file)
+        json_to_excel(data, excel_file, skip_keys=None)
 
 
-def json_to_excel(json_data, excel_file):
+def json_to_excel(json_data, excel_file, skip_keys=None):
+    skip_keys = set() if skip_keys is None else set(skip_keys)
     # 创建一个新的工作簿和工作表
     workbook = Workbook()
     sheet = workbook.active
@@ -309,6 +310,7 @@ def json_to_excel(json_data, excel_file):
     headers = set()
     for item_ in json_data:
         headers.update(item_.keys())
+    headers = [key for key in headers if key not in skip_keys]
 
     # 写入表头
     for col_num, header in enumerate(sorted(headers), 1):
