@@ -289,7 +289,7 @@ def compare_(file1_path, file2_path, output_path, key_column, sheet_index=0,
     result_wb.save(output_path)
 
 
-def json_file_to_excel(json_file, excel_file, skip_keys=None):
+def json_file_to_excel(json_file, excel_file, skip_keys=None, sort_headers=True):
     """
     将JSON文件中的数据转换为Excel文件
     :param json_file: JSON文件的路径（例如：'data.json'）
@@ -298,34 +298,62 @@ def json_file_to_excel(json_file, excel_file, skip_keys=None):
     # 从JSON文件中读取数据
     with open(json_file, 'r', encoding='utf-8') as f:
         data = json.load(f)  # 解析JSON数据
-        json_to_excel(data, excel_file, skip_keys)
+        json_to_excel(data, excel_file, skip_keys, sort_headers)
 
+def json_to_excel(json_file, excel_file, skip_keys=None, sort_headers=True):
+    """
+    将JSON文件中的数据转换为Excel文件
+    :param json_file: JSON文件的路径（例如：'data.json'）
+    :param excel_file: 输出的Excel文件路径（例如：'output.xlsx'）
+    :param skip_keys: 需要跳过的键名列表（例如：['key1', 'key2']）
+    :param sort_headers: 是否对表头进行排序，默认为 True
+    """
+    if skip_keys is None:
+        skip_keys = set()  # 如果没有提供 skip_keys，默认为空集合
+    else:
+        skip_keys = set(skip_keys)  # 将列表转换为集合，便于快速查找
 
-def json_to_excel(json_data, excel_file, skip_keys=None):
-    skip_keys = set() if skip_keys is None else set(skip_keys)
+    # 从JSON文件中读取数据
+    with open(json_file, 'r', encoding='utf-8') as f:
+        data = json.load(f)  # 解析JSON数据
+
     # 创建一个新的工作簿和工作表
     workbook = Workbook()
     sheet = workbook.active
 
-    headers = set()
-    for item_ in json_data:
-        headers.update(item_.keys())
-    headers = [key for key in headers if key not in skip_keys]
+    # 收集所有可能的键（合并所有对象的键）
+    all_keys = set()
+    for item in data:
+        all_keys.update(item.keys())  # 将每个对象的键添加到集合中
+
+    # 过滤掉需要跳过的键
+    headers = [key for key in all_keys if key not in skip_keys]
+
+    # 对表头进行排序（如果 sort_headers 为 True）
+    if sort_headers:
+        headers = sorted(headers)  # 默认按字母顺序升序排序
 
     # 写入表头
-    for col_num, header in enumerate(sorted(headers), 1):
+    for col_num, header in enumerate(headers, 1):
         sheet.cell(row=1, column=col_num, value=header)
 
-    def clean_string(str_value):
-        if isinstance(str_value, str):
+    def clean_string(value):
+        """
+        清理字符串中的非法字符
+        """
+        if isinstance(value, str):
             # 过滤掉 ASCII 控制字符（0x00-0x1F）和非法 Unicode 字符
-            return re.sub(r'[\x00-\x1F\x7F]', '', str_value)
-        return str_value
+            return re.sub(r'[\x00-\x1F\x7F]', '', value)
+        return value
 
     # 写入数据
-    for row_num, item in enumerate(json_data, 2):
-        for col_num, key in enumerate(headers, 1):
-            cel_value = item[key] if key in item else None
-            sheet.cell(row=row_num, column=col_num, value=clean_string(cel_value))
+    for row_num, item in enumerate(data, 2):
+        for col_num, header in enumerate(headers, 1):
+            # 如果当前对象没有该键，则写入空值
+            value = item.get(header, "")
+            cleaned_value = clean_string(value)  # 清理非法字符
+            sheet.cell(row=row_num, column=col_num, value=cleaned_value)
 
+    # 保存Excel文件
     workbook.save(excel_file)
+    print(f"Excel文件已保存为 {excel_file}")
