@@ -4,6 +4,7 @@
 import json
 import os
 from typing import Callable
+import re
 
 import xlrd
 from openpyxl import Workbook
@@ -313,10 +314,16 @@ def json_to_excel(json_data, excel_file):
     for col_num, header in enumerate(headers, 1):
         sheet.cell(row=1, column=col_num, value=header)
 
+    def clean_string(str_value):
+        if isinstance(str_value, str):
+            # 过滤掉 ASCII 控制字符（0x00-0x1F）和非法 Unicode 字符
+            return re.sub(r'[\x00-\x1F\x7F]', '', str_value)
+        return str_value
+
     # 写入数据
     for row_num, item in enumerate(json_data, 2):
         for col_num, key in enumerate(headers, 1):
             cel_value = item[key] if key in item else None
-            sheet.cell(row=row_num, column=col_num, value=cel_value)
+            sheet.cell(row=row_num, column=col_num, value=clean_string(cel_value))
 
     workbook.save(excel_file)
