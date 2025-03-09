@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
 # Author: qicongsheng
+import json
 import os
 from typing import Callable
-import json
 
 import xlrd
 from openpyxl import Workbook
@@ -287,6 +287,7 @@ def compare_(file1_path, file2_path, output_path, key_column, sheet_index=0,
 
     result_wb.save(output_path)
 
+
 def json_file_to_excel(json_file, excel_file):
     """
     将JSON文件中的数据转换为Excel文件
@@ -297,6 +298,7 @@ def json_file_to_excel(json_file, excel_file):
     with open(json_file, 'r', encoding='utf-8') as f:
         data = json.load(f)  # 解析JSON数据
         json_to_excel(data, excel_file)
+
 
 def json_to_excel(json_data, excel_file):
     # 创建一个新的工作簿和工作表
