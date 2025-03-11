@@ -6,7 +6,7 @@ def get_name():
 
 
 def get_version():
-    return '1.9.33'
+    return '1.9.34'
 
 
 def print_version():
