@@ -349,10 +349,10 @@ def json_to_excel(json_data, excel_file, skip_keys=None, sort_headers=True):
     print(f"Excel文件已保存为 {excel_file}")
 
 
-def process_data(excel_file, process_func, filter_func=None, preprocess_func=None, postprocess_func=None, header_row=1, sheet_index=0):
+def process_data(excel_file, process_func, filter_func=None, preprocess_func=None, postprocess_func=None, header_row=1,
+                 sheet_index=0):
     """
     通用的数据处理工具，支持从Excel文件中读取数据并进行处理。
-
     :param excel_file: Excel文件路径
     :param process_func: 数据处理函数，用于生成最终结果
     :param filter_func: 过滤函数，用于判断哪些数据行需要跳过（可选）
