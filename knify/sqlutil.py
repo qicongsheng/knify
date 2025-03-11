@@ -1,13 +1,15 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
 # Author: qicongsheng
-import re
 import json
+import re
+
 from . import excelutil
 
 
-def generate_sql_from_excel(excel_file, sql_template, filter_func=None, preprocess_func=None, postprocess_func=None, header_row=1,
-                 sheet_index=0, translate_chars=None):
+def generate_sql_from_excel(excel_file, sql_template, filter_func=None, preprocess_func=None, postprocess_func=None,
+                            header_row=1,
+                            sheet_index=0, translate_chars=None):
     def replace_placeholders(template, values):
         def replace_match(match):
             key = match.group(1)
@@ -30,12 +32,15 @@ def generate_sql_from_excel(excel_file, sql_template, filter_func=None, preproce
                                   header_row, sheet_index)
 
 
-def generate_sql_from_json(json_data, sql_template, filter_func=None, preprocess_func=None, postprocess_func=None, translate_chars=None):
+def generate_sql_from_json(json_data, sql_template, filter_func=None, preprocess_func=None, postprocess_func=None,
+                           translate_chars=None):
     def replace_placeholders(template, values):
         def replace_match(match):
             key = match.group(1)
             return str(values.get(key, match.group(0)))
+
         return re.sub(r'\$\{(.*?)\}', replace_match, template)
+
     if isinstance(json_data, str):
         json_data = json.loads(json_data)
     result = []
