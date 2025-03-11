@@ -347,3 +347,63 @@ def json_to_excel(json_data, excel_file, skip_keys=None, sort_headers=True):
     # 保存Excel文件
     workbook.save(excel_file)
     print(f"Excel文件已保存为 {excel_file}")
+
+
+def process_data(excel_file, process_func, filter_func=None, preprocess_func=None, postprocess_func=None, header_row=1, sheet_index=0):
+    """
+    通用的数据处理工具，支持从Excel文件中读取数据并进行处理。
+
+    :param excel_file: Excel文件路径
+    :param process_func: 数据处理函数，用于生成最终结果
+    :param filter_func: 过滤函数，用于判断哪些数据行需要跳过（可选）
+    :param preprocess_func: 预处理函数，用于对列数据进行处理（可选）
+    :param postprocess_func: 后置处理函数，用于对生成的结果进行处理（可选）
+    :param header_row: Excel文件中表头的行号，默认为1（openpyxl的行号从1开始）
+    :param sheet_index: 工作表的索引，默认为0（第一个工作表）
+    :return: 处理后的结果列表
+    """
+    # 判断文件格式
+    file_ext = os.path.splitext(excel_file)[1].lower()
+
+    if file_ext == '.xlsx':
+        # 使用openpyxl读取.xlsx文件
+        workbook = load_workbook(excel_file)
+        sheet = workbook.worksheets[sheet_index]
+        rows = sheet.iter_rows(min_row=header_row + 1, values_only=True)
+        header = [cell.value for cell in sheet[header_row]]
+    elif file_ext == '.xls':
+        # 使用xlrd读取.xls文件
+        workbook = xlrd.open_workbook(excel_file)
+        sheet = workbook.sheet_by_index(sheet_index)
+        rows = [sheet.row_values(row) for row in range(header_row, sheet.nrows)]
+        header = sheet.row_values(header_row - 1)
+    else:
+        raise ValueError("Unsupported file format. Only .xls and .xlsx are supported.")
+
+    # 初始化结果列表
+    results = []
+
+    # 遍历每一行数据
+    for row in rows:
+        # 将行数据与表头组合为字典
+        row_data = {header[i]: row[i] for i in range(len(header))}
+
+        # 如果提供了预处理函数，则对列数据进行处理
+        if preprocess_func:
+            row_data = preprocess_func(row_data)
+
+        # 如果提供了过滤函数，并且过滤函数返回True，则跳过该行
+        if filter_func and filter_func(row_data):
+            continue
+
+        # 调用数据处理函数生成结果
+        result = process_func(row_data)
+
+        # 如果提供了后置处理函数，则对生成的结果进行处理
+        if postprocess_func:
+            result = postprocess_func(result, row_data)
+
+        # 将生成的结果添加到列表中
+        results.append(result)
+
+    return results
