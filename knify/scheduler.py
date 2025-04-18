@@ -37,7 +37,8 @@ class CronScheduler:
             kwargs: Optional[dict] = None,
             name: Optional[str] = None,
             policy: BlockingPolicy = BlockingPolicy.SKIP,  # 单任务阻塞策略‌:ml-citation{ref="1,6" data="citationList"}
-            max_instances: int = 1  # 最大并发实例数‌:ml-citation{ref="6,7" data="citationList"}
+            max_instances: int = 1,  # 最大并发实例数‌:ml-citation{ref="6,7" data="citationList"}
+            next_run_time: datetime = None,
     ) -> str:
         """
         添加定时任务
@@ -46,7 +47,8 @@ class CronScheduler:
             max_instances: 允许同时运行的最大实例数‌:ml-citation{ref="6,7" data="citationList"}
         """
         task_id = f"task_{len(self._tasks) + 1}"
-        next_run = self._calculate_next_run(cron_expr)
+        next_run = self._calculate_next_run(cron_expr) if next_run_time is None else dateutil.date_to_timestamp(
+            next_run_time)
 
         task = {
             'id': task_id,
@@ -83,16 +85,12 @@ class CronScheduler:
 
     def _should_execute(self, task: Dict) -> bool:
         """判断是否满足执行条件‌:ml-citation{ref="1,5" data="citationList"}"""
-        with self._lock:
-            active_info = self._active_tasks.get(task['id'], {'count': 0})
-
-            if active_info['count'] >= task['max_instances']:
-                return False
-
-            if task['policy'] == BlockingPolicy.SKIP and active_info['count'] > 0:
-                return False
-
-            return True
+        active_info = self._active_tasks.get(task['id'], {'count': 0})
+        if active_info['count'] >= task['max_instances']:
+            return False
+        if task['policy'] == BlockingPolicy.SKIP and active_info['count'] > 0:
+            return False
+        return True
 
     def _run_loop(self) -> None:
         """调度主循环‌:ml-citation{ref="1,5" data="citationList"}"""
