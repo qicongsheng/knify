@@ -9,6 +9,7 @@ from typing import Callable, Optional, Dict
 
 from croniter import croniter
 
+from . import dateutil
 from . import logger
 
 
@@ -66,7 +67,7 @@ class CronScheduler:
 
     def _calculate_next_run(self, cron_expr: str) -> float:
         """计算下次运行时间"""
-        return croniter(cron_expr, datetime.now()).get_next(float)
+        return dateutil.date_to_timestamp(croniter(cron_expr, datetime.now()).get_next(datetime))
 
     def _execute_task(self, task: Dict) -> None:
         """执行任务包装方法"""
