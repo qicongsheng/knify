@@ -219,9 +219,9 @@ class TaskScheduler:
 # 示例用法
 if __name__ == "__main__":
     def long_running_task(name):
-        print(f"[{datetime.now()}] {name} task started")
+        logger.info(f"[{datetime.now()}] {name} task started")
         time.sleep(10)  # 模拟长时间运行的任务
-        print(f"[{datetime.now()}] {name} task completed")
+        logger.info(f"[{datetime.now()}] {name} task completed")
 
 
     scheduler = TaskScheduler()
