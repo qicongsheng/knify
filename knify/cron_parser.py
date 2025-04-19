@@ -212,36 +212,48 @@ class CronParser:
             # 检查日和周
             day_valid = dt.day in self.fields['day']
             weekday_valid = dt.weekday() in self.fields['weekday']
+            current_time_sec = dt.hour * 3600 + dt.minute * 60 + dt.second
+            target_time_sec = (self.fields['hour'][0] * 3600 +
+                               self.fields['minute'][0] * 60 +
+                               self.fields['second'][0])
 
-            # 情况1: 日无限制(使用?)，周有具体限制
-            if (self.fields['day'] == [x for x in range(1, 32)] and
-                    self.fields['weekday'] != [x for x in range(0, 7)]):
-                if not weekday_valid:
-                    # 找到下一个符合条件的周几，保持原有时间
-                    next_weekdays = [d for d in self.fields['weekday'] if d > dt.weekday()]
-                    if next_weekdays:
-                        days_to_add = min(next_weekdays) - dt.weekday()
-                    else:
-                        days_to_add = (7 - dt.weekday()) + min(self.fields['weekday'])
+            # 情况1: 日无限制(使用?)，周有限制
+            if (self.fields['day'] == list(range(1, 32)) and
+                    self.fields['weekday'] != list(range(0, 7))):
+
+                if (not weekday_valid or
+                        (weekday_valid and current_time_sec >= target_time_sec)):
+
+                    # 找到下一个最近的周几
+                    next_weekday = min([d for d in self.fields['weekday'] if d > dt.weekday()],
+                                       default=self.fields['weekday'][0])
+                    days_to_add = (next_weekday - dt.weekday()) % 7
+                    if days_to_add == 0:  # 同一天但时间已过
+                        days_to_add = 7
                     dt += timedelta(days=days_to_add)
+                    dt = dt.replace(hour=self.fields['hour'][0],
+                                    minute=self.fields['minute'][0],
+                                    second=self.fields['second'][0])
                     continue
 
-            # 情况2: 日有具体限制，周无限制(使用?)
-            elif (self.fields['day'] != [x for x in range(1, 32)] and
-                  self.fields['weekday'] == [x for x in range(0, 7)]):
+            # 情况2: 日有限制，周无限制(使用?)
+            elif (self.fields['day'] != list(range(1, 32)) and (self.fields['weekday'] == list(range(0, 7)))):
                 if not day_valid:
-                    next_days = [d for d in self.fields['day'] if d > dt.day and d <= self._days_in_month(dt.year, dt.month)]
+                    next_days = [d for d in self.fields['day'] if d > dt.day]
                     if next_days:
                         next_day = min(next_days)
-                        dt = dt.replace(day=next_day)
+                        try:
+                            dt = dt.replace(day=next_day)
+                        except ValueError:  # 无效日期（如2月30日）
+                            dt = self._add_months(dt, 1).replace(day=min(self.fields['day']))
                     else:
-                        # 跳到下个月第一天
                         dt = self._add_months(dt, 1).replace(day=min(self.fields['day']))
                     continue
 
-            # 情况3: 日和周都有具体限制
-            elif not (self.fields['day'] == [x for x in range(1, 32)] or
-                      self.fields['weekday'] == [x for x in range(0, 7)]):
+            # 情况3: 日和周都有限制
+            elif not (self.fields['day'] == list(range(1, 32)) or
+                      self.fields['weekday'] == list(range(0, 7))):
+
                 if not day_valid or not weekday_valid:
                     dt += timedelta(days=1)
                     continue
@@ -284,7 +296,9 @@ class CronParser:
 
             # 所有条件满足
             return dt.timestamp()
+
         raise ValueError("Unable to find next execution time after 100000 iterations")
+
 
     def _add_months(self, dt: datetime, months: int) -> datetime:
         """添加指定月数到datetime"""
@@ -392,6 +406,12 @@ class CronParser:
 
 # 使用示例
 if __name__ == "__main__":
+    cron2 = CronParser("*/5 * * * *")  # 每月1日午夜，不指定周几
+    print(f"Next execution: {cron2.get_next_datetime()}")
+
+    cron2 = CronParser("5 23 * * *")  # 每月1日午夜，不指定周几
+    print(f"Next execution: {cron2.get_next_datetime()}")
+
     # 使用问号的cron表达式
     cron1 = CronParser("0 0 12 ? * MON")  # 每周一中午12点，不指定具体日
     print(f"Next execution: {cron1.get_next_datetime()}")
@@ -399,5 +419,3 @@ if __name__ == "__main__":
     cron2 = CronParser("0 0 0 1 * ?")  # 每月1日午夜，不指定周几
     print(f"Next execution: {cron2.get_next_datetime()}")
 
-    cron2 = CronParser("5 23 * * *")  # 每月1日午夜，不指定周几
-    print(f"Next execution: {cron2.get_next_datetime()}")
