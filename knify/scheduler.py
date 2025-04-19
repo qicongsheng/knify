@@ -6,8 +6,8 @@ import time
 from datetime import datetime
 from enum import Enum
 
-from cron_parser import CronParser
-from logger import logger
+from . import cron_parser
+from . import logger
 
 
 class BlockingPolicy(Enum):
@@ -75,7 +75,7 @@ class TaskScheduler:
         if base_time is None:
             base_time = datetime.now()
 
-        cron = CronParser(cron_expression)
+        cron = cron_parser.CronParser(cron_expression)
         return cron.get_next_datetime(base_time)
 
     def _run_task(self, task):
