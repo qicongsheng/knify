@@ -4,140 +4,244 @@
 import threading
 import time
 from datetime import datetime
-from enum import Enum, auto
-from typing import Callable, Optional, Dict
+from enum import Enum
 
-from croniter import croniter
-
-from . import dateutil
-from . import logger
+from cron_parser import CronParser
+from logger import logger
 
 
 class BlockingPolicy(Enum):
-    """任务阻塞策略枚举"""
-    SKIP = auto()  # 跳过正在执行的任务实例‌:ml-citation{ref="1,8" data="citationList"}
-    WAIT = auto()  # 等待当前实例完成‌:ml-citation{ref="5,7" data="citationList"}
-    FORCE = auto()  # 强制新建线程执行‌:ml-citation{ref="6,8" data="citationList"}
+    """
+    阻塞策略枚举
+    """
+    SKIP = 1  # 跳过当前执行（如果前一次还在运行）
+    WAIT = 2  # 等待前一次执行完成（可能会延迟）
+    PARALLEL = 3  # 并行执行（默认行为，不阻塞）
+    CANCEL_OLD = 4  # 取消前一次执行（如果还在运行）
 
 
-class CronScheduler:
+class TaskScheduler:
     def __init__(self):
-        """初始化调度器"""
-        self._tasks = []
+        """
+        初始化任务调度器
+        """
+        self.tasks = []
         self._running = False
-        self._thread = None
-        self._lock = threading.Lock()
-        self._active_tasks: Dict[str, Dict] = {}  # 记录任务执行状态‌:ml-citation{ref="6,7" data="citationList"}
+        self._scheduler_thread = None
+        self._task_locks = {}  # 用于跟踪任务执行状态的锁
+        self.logger = logger
 
-    def add_task(
-            self,
-            func: Callable,
-            cron_expr: str,
-            args: tuple = (),
-            kwargs: Optional[dict] = None,
-            name: Optional[str] = None,
-            policy: BlockingPolicy = BlockingPolicy.SKIP,  # 单任务阻塞策略‌:ml-citation{ref="1,6" data="citationList"}
-            max_instances: int = 1,  # 最大并发实例数‌:ml-citation{ref="6,7" data="citationList"}
-            next_run_time: datetime = None,
-    ) -> str:
+    def add_task(self, name, cron_expression, func, args=(), kwargs=None,
+                 description="", blocking_policy=BlockingPolicy.SKIP):
         """
-        添加定时任务
-        参数:
-            policy: 阻塞策略(默认SKIP)‌:ml-citation{ref="1,6" data="citationList"}
-            max_instances: 允许同时运行的最大实例数‌:ml-citation{ref="6,7" data="citationList"}
+        添加一个新任务
+
+        :param name: 任务名称
+        :param cron_expression: Cron表达式，如 "* * * * *"
+        :param func: 要执行的函数
+        :param args: 函数的位置参数
+        :param kwargs: 函数的关键字参数
+        :param description: 任务描述
+        :param blocking_policy: 阻塞策略，BlockingPolicy枚举值
         """
-        task_id = f"task_{len(self._tasks) + 1}"
-        next_run = self._calculate_next_run(cron_expr) if next_run_time is None else dateutil.date_to_timestamp(
-            next_run_time)
+        if kwargs is None:
+            kwargs = {}
 
         task = {
-            'id': task_id,
+            'name': name,
+            'cron': cron_expression,
             'func': func,
-            'cron': cron_expr,
             'args': args,
-            'kwargs': kwargs or {},
-            'name': name or task_id,
-            'policy': policy,
-            'max_instances': max_instances,
-            'next_run': next_run,
-            'lock': threading.RLock()  # 任务级锁‌:ml-citation{ref="5,7" data="citationList"}
+            'kwargs': kwargs,
+            'description': description,
+            'blocking_policy': blocking_policy,
+            'next_run': self._calculate_next_run(cron_expression),
+            'thread': None,  # 存储当前执行线程
+            'running': False  # 标记任务是否正在运行
         }
 
-        with self._lock:
-            self._tasks.append(task)
-        return task_id
+        self.tasks.append(task)
+        self._task_locks[name] = threading.Lock()
+        self.logger.info(f"Added task '{name}' with schedule '{cron_expression}' and policy {blocking_policy.name}")
 
-    def _calculate_next_run(self, cron_expr: str) -> float:
-        """计算下次运行时间"""
-        return dateutil.date_to_timestamp(croniter(cron_expr, datetime.now()).get_next(datetime))
+    def _calculate_next_run(self, cron_expression, base_time=None):
+        """
+        计算下一次运行时间
 
-    def _execute_task(self, task: Dict) -> None:
-        """执行任务包装方法"""
+        :param cron_expression: Cron表达式
+        :param base_time: 基准时间，默认为当前时间
+        :return: 下一次运行的时间戳
+        """
+        if base_time is None:
+            base_time = datetime.now()
+
+        cron = CronParser(cron_expression)
+        return cron.get_next_datetime(base_time)
+
+    def _run_task(self, task):
+        """
+        执行单个任务
+
+        :param task: 要执行的任务字典
+        """
+        task_name = task['name']
+        lock = self._task_locks[task_name]
+
         try:
-            task['func'](*task['args'], **task['kwargs'])
+            with lock:
+                task['running'] = True
+                self.logger.info(f"Executing task '{task_name}' with policy {task['blocking_policy'].name}")
+                start_time = time.time()
+
+                task['func'](*task['args'], **task['kwargs'])
+
+                duration = time.time() - start_time
+                self.logger.info(f"Task '{task_name}' completed in {duration:.2f} seconds")
+
         except Exception as e:
-            logger.info(f"[{datetime.now()}] 任务执行失败 {task['name']}: {e}")
+            self.logger.error(f"Error executing task '{task_name}': {str(e)}")
         finally:
-            with self._lock:
-                self._active_tasks[task['id']]['count'] -= 1
-                if self._active_tasks[task['id']]['count'] == 0:
-                    self._active_tasks.pop(task['id'])
+            task['running'] = False
 
-    def _should_execute(self, task: Dict) -> bool:
-        """判断是否满足执行条件‌:ml-citation{ref="1,5" data="citationList"}"""
-        active_info = self._active_tasks.get(task['id'], {'count': 0})
-        if active_info['count'] >= task['max_instances']:
-            return False
-        if task['policy'] == BlockingPolicy.SKIP and active_info['count'] > 0:
-            return False
-        return True
+    def _should_execute_task(self, task):
+        """
+        根据阻塞策略判断是否应该执行任务
 
-    def _run_loop(self) -> None:
-        """调度主循环‌:ml-citation{ref="1,5" data="citationList"}"""
+        :param task: 任务字典
+        :return: 是否应该执行
+        """
+        policy = task['blocking_policy']
+
+        if not task['running']:
+            return True
+
+        if policy == BlockingPolicy.PARALLEL:
+            return True
+        elif policy == BlockingPolicy.SKIP:
+            self.logger.debug(f"Skipping task '{task['name']}' (previous execution still running)")
+            return False
+        elif policy == BlockingPolicy.WAIT:
+            # 等待前一次执行完成
+            while task['running']:
+                time.sleep(0.1)
+            return True
+        elif policy == BlockingPolicy.CANCEL_OLD:
+            # 取消前一次执行
+            if task['thread'] and task['thread'].is_alive():
+                # 注意：Python中无法安全地终止线程，这里只是标记
+                self.logger.warning(f"Cannot safely cancel running task '{task['name']}'")
+                return False
+            return True
+
+        return False
+
+    def _scheduler_loop(self):
+        """
+        调度器主循环
+        """
+        self.logger.info("Task scheduler started")
         while self._running:
-            now = time.time()
-            tasks_to_run = []
+            now = datetime.now()
 
-            with self._lock:
-                for task in self._tasks:
-                    if now >= task['next_run'] and self._should_execute(task):
-                        tasks_to_run.append(task)
-                        task['next_run'] = self._calculate_next_run(task['cron'])
+            for task in self.tasks:
+                if task['next_run'] <= now:
+                    if self._should_execute_task(task):
+                        # 创建并启动线程
+                        task_thread = threading.Thread(
+                            target=self._run_task,
+                            args=(task,),
+                            daemon=True
+                        )
+                        task['thread'] = task_thread
+                        task_thread.start()
 
-                        # 更新活动任务计数
-                        if task['id'] not in self._active_tasks:
-                            self._active_tasks[task['id']] = {'count': 0}
-                        self._active_tasks[task['id']]['count'] += 1
+                    # 计算下一次执行时间
+                    task['next_run'] = self._calculate_next_run(
+                        task['cron'],
+                        task['next_run']
+                    )
 
-            # 启动任务线程
-            for task in tasks_to_run:
-                if task['policy'] == BlockingPolicy.WAIT:
-                    with task['lock']:  # 串行执行‌:ml-citation{ref="5,7" data="citationList"}
-                        self._execute_task(task)
-                else:
-                    # SKIP/FORCE策略使用新线程‌:ml-citation{ref="6,8" data="citationList"}
-                    threading.Thread(
-                        target=self._execute_task,
-                        args=(task,),
-                        daemon=True
-                    ).start()
+                    self.logger.debug(
+                        f"Scheduled next run for task '{task['name']}' at {task['next_run']}"
+                    )
 
-            # 计算下次检查间隔
-            next_check = min(
-                (t['next_run'] for t in self._tasks),
-                default=now + 1
-            )
-            time.sleep(max(0, min(next_check - now, 1)))
+            # 休眠一段时间，避免CPU占用过高
+            time.sleep(0.1)
 
-    def start(self) -> None:
-        """启动调度器‌:ml-citation{ref="1,8" data="citationList"}"""
+    def start(self):
+        """
+        启动任务调度器
+        """
         if not self._running:
             self._running = True
-            self._thread = threading.Thread(target=self._run_loop, daemon=True)
-            self._thread.start()
+            self._scheduler_thread = threading.Thread(
+                target=self._scheduler_loop,
+                daemon=True
+            )
+            self._scheduler_thread.start()
+            self.logger.info("Task scheduler started in background thread")
 
-    def stop(self, wait: bool = True) -> None:
-        """停止调度器‌:ml-citation{ref="5,7" data="citationList"}"""
-        self._running = False
-        if wait and self._thread:
-            self._thread.join()
+    def stop(self):
+        """
+        停止任务调度器
+        """
+        if self._running:
+            self._running = False
+            if self._scheduler_thread:
+                self._scheduler_thread.join(timeout=1)
+            self.logger.info("Task scheduler stopped")
+
+    def list_tasks(self):
+        """
+        列出所有任务及其下次执行时间
+
+        :return: 任务列表
+        """
+        return [
+            {
+                'name': task['name'],
+                'cron': task['cron'],
+                'description': task['description'],
+                'blocking_policy': task['blocking_policy'].name,
+                'next_run': task['next_run'].strftime('%Y-%m-%d %H:%M:%S'),
+                'is_running': task['running']
+            }
+            for task in self.tasks
+        ]
+
+    def __del__(self):
+        """
+        析构函数，确保调度器停止
+        """
+        self.stop()
+
+
+# 示例用法
+if __name__ == "__main__":
+    def long_running_task(name):
+        print(f"[{datetime.now()}] {name} task started")
+        time.sleep(10)  # 模拟长时间运行的任务
+        print(f"[{datetime.now()}] {name} task completed")
+
+
+    scheduler = TaskScheduler()
+
+    scheduler.add_task(
+        name="skip_task",
+        cron_expression="*/5 * * * * *",  # 每5秒
+        func=long_running_task,
+        args=("Skip",),
+        description="跳过执行策略的任务",
+        blocking_policy=BlockingPolicy.SKIP
+    )
+
+    # 启动调度器
+    scheduler.start()
+
+    try:
+        # 主线程保持运行
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        print("\nStopping scheduler...")
+        scheduler.stop()
