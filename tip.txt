@@ -1,0 +1,10 @@
+#pip地址
+https://pypi.org/project/csqi/
+
+#打包
+python3 setup.py sdist
+
+#上传
+pip3 install twine
+twine upload dist/* -u __token__ -p pypi-AgENdGVzdC5weX
+
