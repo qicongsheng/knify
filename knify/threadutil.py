@@ -52,7 +52,7 @@ class PartitionExecutor:
         self.task_info['total'] = len(list_obj)
         self.task_info['time_start'] = dateutil.now()
         for index_, list_for_process in enumerate(list_partition):
-            t = threading.Thread(target=func_wrapper, args=(list_for_process, _func_))
+            t = threading.Thread(target=self.func_wrapper, args=(list_for_process, _func_))
             t.start()
             threads.append(t)
             if len(threads) == thread_num or index_ == len(list_partition) - 1:
