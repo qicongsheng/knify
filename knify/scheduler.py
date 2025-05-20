@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
 # Author: qicongsheng
-import threading
 import time
 from datetime import datetime
 from enum import Enum
@@ -18,28 +17,22 @@ class BlockingPolicy(Enum):
     阻塞策略枚举
     """
     SKIP = 1  # 跳过当前执行（如果前一次还在运行）
-    WAIT = 2  # 等待前一次执行完成（可能会延迟）
-    PARALLEL = 3  # 并行执行（默认行为，不阻塞）
-    CANCEL_OLD = 4  # 取消前一次执行（如果还在运行）
+    PARALLEL = 2  # 并行执行（默认行为，不阻塞）
 
 
 class TaskScheduler:
+
     def __init__(self, timezone=timezone('Asia/Shanghai')):
         """
         初始化任务调度器
         """
-        self.tasks = []
-        self._running = False
-        self._scheduler_thread = None
-        self._task_locks = {}  # 用于跟踪任务执行状态的锁
         self.logger = logger
         self.scheduler = BlockingScheduler(timezone=timezone)
 
     def add_task(self, name, cron_expression, func, args=(), kwargs=None,
-                 description="", blocking_policy=BlockingPolicy.SKIP):
+                 description="", blocking_policy=BlockingPolicy.SKIP, run_immediately=False):
         """
         添加一个新任务
-
         :param name: 任务名称
         :param cron_expression: Cron表达式，如 "* * * * *"
         :param func: 要执行的函数
@@ -47,6 +40,7 @@ class TaskScheduler:
         :param kwargs: 函数的关键字参数
         :param description: 任务描述
         :param blocking_policy: 阻塞策略，BlockingPolicy枚举值
+        :param run_immediately: 是否立即执行
         """
         if kwargs is None:
             kwargs = {}
@@ -61,11 +55,25 @@ class TaskScheduler:
             'blocking_policy': blocking_policy
         }
 
-        self.tasks.append(task)
-        self._task_locks[name] = threading.Lock()
-        self.logger.info(f"Added task '{name}' with schedule '{cron_expression}' and policy {blocking_policy.name}")
-        self.scheduler.add_job(func, CronTrigger.from_crontab(cron_expression, timezone=timezone('Asia/Shanghai')),
-                               name=name, args=args, kwargs=kwargs)
+        next_run_time = datetime.now(self.scheduler.timezone) if run_immediately else None
+        policy_kwargs = self.get_policy_kwargs_by_policy(blocking_policy)
+        job = self.scheduler.add_job(func,
+                                     CronTrigger.from_crontab(cron_expression, timezone=timezone('Asia/Shanghai')),
+                                     name=name, args=args, kwargs=kwargs, next_run_time=next_run_time,
+                                     coalesce=policy_kwargs.get('coalesce'),
+                                     max_instances=policy_kwargs.get('max_instances'),
+                                     misfire_grace_time=policy_kwargs.get('misfire_grace_time'))
+        self.logger.info(
+            f"Added task '{name}'(id={job.id}) with schedule '{cron_expression}' and policy {blocking_policy.name}")
+
+    def get_policy_kwargs_by_policy(self, blocking_policy):
+        # 跳过当前执行（如果前一次还在运行）
+        if BlockingPolicy.SKIP == blocking_policy:
+            return {"max_instances": 1, "misfire_grace_time": 1, "coalesce": True}
+        # 并行执行（默认行为，不阻塞）
+        if BlockingPolicy.PARALLEL == blocking_policy:
+            return {"max_instances": 99999, "misfire_grace_time": None, "coalesce": False}
+        return {}
 
     def start(self):
         self.logger.info(f"TaskScheduler started")
@@ -76,17 +84,18 @@ class TaskScheduler:
 if __name__ == "__main__":
     def long_running_task(name):
         logger.info(f"[{datetime.now()}] {name} task started")
-        time.sleep(10)  # 模拟长时间运行的任务
+        time.sleep(120)  # 模拟长时间运行的任务
         logger.info(f"[{datetime.now()}] {name} task completed")
 
 
     scheduler = TaskScheduler()
     scheduler.add_task(
         name="skip_task",
-        cron_expression="*/1 * * * *",  # 每5秒
+        cron_expression="*/1 * * * *",  # 每1分钟
         func=long_running_task,
         args=("Skip",),
         description="跳过执行策略的任务",
+        run_immediately=True,
         blocking_policy=BlockingPolicy.SKIP
     )
     # 启动调度器
