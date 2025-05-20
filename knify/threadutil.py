@@ -26,8 +26,8 @@ def async_call(async_func, callback_func, *args, **kwargs):
 
 class PartitionExecutor:
     def __init__(self):
-        task_lock = threading.Lock()
-        task_info = {'total': 0, 'processed': 0, 'time_start': None}
+        self.task_lock = threading.Lock()
+        self.task_info = {'total': 0, 'processed': 0, 'time_start': None}
 
     def print_task(self):
         time_used = dateutil.now() - self.task_info['time_start']
