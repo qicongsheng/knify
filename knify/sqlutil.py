@@ -4,7 +4,7 @@
 import json
 import re
 
-from . import excelutil
+from knify import excelutil
 
 
 def generate_sql_from_excel(excel_file, sql_template, filter_func=None, preprocess_func=None, postprocess_func=None,

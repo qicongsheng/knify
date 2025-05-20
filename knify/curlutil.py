@@ -9,7 +9,7 @@ import requests
 import uncurl
 from requests.auth import HTTPBasicAuth
 
-from . import warnutil
+from knify import warnutil
 
 
 def request(curl_command: str) -> Optional[requests.Response]:
