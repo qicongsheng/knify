@@ -2,7 +2,7 @@
 # -*- coding:utf-8 -*-
 # Author: qicongsheng
 import re
-from typing import Optional
+from typing import Optional, List, Tuple
 
 import curlify
 import requests
@@ -28,6 +28,7 @@ def request(curl_command: str) -> Optional[requests.Response]:
     - --connect-timeout
     - --max-time
     - --request/-X
+    - --data-urlencode
     :param curl_command: curl 命令字符串
     :return: 响应对象
     """
@@ -45,7 +46,9 @@ def request(curl_command: str) -> Optional[requests.Response]:
     retry_pattern = re.compile(r'\s--retry\s+(\d+)', re.MULTILINE)
     connect_timeout_pattern = re.compile(r'\s--connect-timeout\s+(\d+)', re.MULTILINE)
     max_time_pattern = re.compile(r'\s--max-time\s+(\d+)', re.MULTILINE)
-    request_method_pattern = re.compile(r'\s(--request|-X)\s+([A-Za-z]+)', re.MULTILINE)  # 新增：解析 --request/-X 参数
+    request_method_pattern = re.compile(r'\s(--request|-X)\s+([A-Za-z]+)', re.MULTILINE)
+    # 新增：解析 --data-urlencode 参数
+    data_urlencode_pattern = re.compile(r'\s--data-urlencode\s+["\']?([^"\'\s]+)["\']?', re.MULTILINE)
 
     # 检查是否包含参数
     verify_ssl = not bool(insecure_pattern.search(curl_command))
@@ -60,7 +63,9 @@ def request(curl_command: str) -> Optional[requests.Response]:
     retry = retry_pattern.search(curl_command)
     connect_timeout = connect_timeout_pattern.search(curl_command)
     max_time = max_time_pattern.search(curl_command)
-    request_method = request_method_pattern.search(curl_command)  # 新增：获取请求方法
+    request_method = request_method_pattern.search(curl_command)
+    # 新增：解析所有 --data-urlencode 参数
+    data_urlencode_matches = data_urlencode_pattern.findall(curl_command)
 
     # 移除参数，避免 uncurl 解析失败
     curl_command = insecure_pattern.sub(' ', curl_command)
@@ -75,7 +80,9 @@ def request(curl_command: str) -> Optional[requests.Response]:
     curl_command = retry_pattern.sub(' ', curl_command)
     curl_command = connect_timeout_pattern.sub(' ', curl_command)
     curl_command = max_time_pattern.sub(' ', curl_command)
-    curl_command = request_method_pattern.sub(' ', curl_command)  # 新增：移除 --request/-X 参数
+    curl_command = request_method_pattern.sub(' ', curl_command)
+    # 新增：移除 --data-urlencode 参数
+    curl_command = data_urlencode_pattern.sub(' ', curl_command)
 
     # 使用 uncurl 解析 curl 命令
     context = uncurl.parse_context(curl_command)
@@ -87,7 +94,7 @@ def request(curl_command: str) -> Optional[requests.Response]:
 
     # 如果 --request/-X 参数存在，覆盖默认的请求方法
     if request_method:
-        method = request_method.group(2).lower()  # 获取请求方法并转换为小写
+        method = request_method.group(2).lower()
 
     # 处理 --user-agent/-A
     if user_agent:
@@ -124,6 +131,20 @@ def request(curl_command: str) -> Optional[requests.Response]:
             files[key] = (None, value)
         data = None  # 清空 data，因为表单数据通过 files 发送
 
+    # 新增：处理 --data-urlencode 参数
+    urlencoded_data = None
+    if data_urlencode_matches and not files:
+        # 只处理没有 multipart 表单的情况
+        urlencoded_params: List[Tuple[str, str]] = []
+        for item in data_urlencode_matches:
+            if '=' in item:
+                key, value = item.split('=', 1)
+                urlencoded_params.append((key, value))
+            else:
+                # 没有键，只有值
+                urlencoded_params.append(('', item))
+        urlencoded_data = urlencoded_params
+
     # 处理 --referer/-e
     if referer:
         headers['Referer'] = referer.group(2)
@@ -148,17 +169,30 @@ def request(curl_command: str) -> Optional[requests.Response]:
     # 使用 requests.request 发送请求
     for attempt in range(retries + 1):
         try:
-            response = requests.request(
-                method,
-                url,
-                headers=headers,
-                data=data,
-                files=files,
-                auth=auth,
-                allow_redirects=follow_redirects,
-                verify=verify_ssl,
-                timeout=timeout
-            )
+            # 如果有 URL 编码数据，优先使用它
+            if urlencoded_data:
+                response = requests.request(
+                    method,
+                    url,
+                    headers=headers,
+                    data=urlencoded_data,
+                    auth=auth,
+                    allow_redirects=follow_redirects,
+                    verify=verify_ssl,
+                    timeout=timeout
+                )
+            else:
+                response = requests.request(
+                    method,
+                    url,
+                    headers=headers,
+                    data=data,
+                    files=files,
+                    auth=auth,
+                    allow_redirects=follow_redirects,
+                    verify=verify_ssl,
+                    timeout=timeout
+                )
             break
         except requests.exceptions.RequestException as e:
             if attempt == retries:
