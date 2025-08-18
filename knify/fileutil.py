@@ -11,13 +11,18 @@ def read_lines(file_path: str, encoding: str = 'utf-8', trim: bool = True) -> li
         return [line_.strip() for line_ in file.readlines()] if trim else file.readlines()
 
 
-def write_line(file_path: str, line: str, encoding: str = 'utf-8', append: bool = True) -> None:
+def write_line(file_path: str, line: str, encoding: str = 'utf-8', append: bool = True, flush: bool = True) -> None:
     mode = 'a' if append else 'w'
     with open(file_path, mode, encoding=encoding) as file:
         file.write(str(line) + '\n')
+        if flush:
+            file.flush()
 
 
-def write_lines(file_path: str, lines: list[object], encoding: str = 'utf-8', append: bool = True) -> None:
+def write_lines(file_path: str, lines: list[object], encoding: str = 'utf-8', append: bool = True,
+                flush: bool = True) -> None:
     mode = 'a' if append else 'w'
     with open(file_path, mode, encoding=encoding) as file:
         file.writelines([str(line) + '\n' for line in lines])
+        if flush:
+            file.flush()
