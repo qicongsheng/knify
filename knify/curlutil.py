@@ -28,6 +28,7 @@ class CurlParser:
         self.verify = False
         self.proxies = {}
         self.output_file = None
+        self.remote_name = False
         self.retry = 0
 
     def parse(self) -> 'CurlParser':
@@ -181,6 +182,12 @@ class CurlParser:
                 i += 2
                 continue
 
+            # -O, --remote-name: 使用 URL 中的文件名保存
+            if part in ['-O', '--remote-name']:
+                self.remote_name = True
+                i += 1
+                continue
+
             # --retry: 重试次数
             if part == '--retry':
                 self.retry = int(parts[i + 1])
@@ -244,6 +251,8 @@ class CurlParser:
                     raise
 
         # 保存到文件
+        if self.remote_name and not self.output_file:
+            self.output_file = self.url.rstrip('/').split('/')[-1] or 'output'
         if self.output_file and response:
             with open(self.output_file, 'wb') as f:
                 f.write(response.content)
