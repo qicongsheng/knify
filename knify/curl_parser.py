@@ -1,6 +1,10 @@
+#!/usr/bin/env python
+# -*- coding:utf-8 -*-
+# Author: qicongsheng
 import shlex
-import re
-from typing import Dict, Any, Optional
+from typing import Dict, Any
+
+import curlify
 import requests
 
 
@@ -21,6 +25,8 @@ class CurlParser:
         self.allow_redirects = True
         self.verify = True
         self.proxies = {}
+        self.output_file = None
+        self.retry = 0
 
     def parse(self) -> 'CurlParser':
         """解析 curl 命令"""
@@ -84,6 +90,18 @@ class CurlParser:
                             self.data = {}
                         if isinstance(self.data, dict):
                             self.data[key] = value
+                i += 2
+                continue
+
+            # --form-string: 表单字符串数据
+            if part == '--form-string':
+                form_data = parts[i + 1]
+                if '=' in form_data:
+                    key, value = form_data.split('=', 1)
+                    if not self.data:
+                        self.data = {}
+                    if isinstance(self.data, dict):
+                        self.data[key] = value
                 i += 2
                 continue
 
@@ -155,6 +173,18 @@ class CurlParser:
                 i += 1
                 continue
 
+            # -o, --output: 输出到文件
+            if part in ['-o', '--output']:
+                self.output_file = parts[i + 1]
+                i += 2
+                continue
+
+            # --retry: 重试次数
+            if part == '--retry':
+                self.retry = int(parts[i + 1])
+                i += 2
+                continue
+
             i += 1
 
         return self
@@ -197,18 +227,34 @@ class CurlParser:
             else:
                 kwargs['data'] = self.data
 
-        # 发送请求
-        response = requests.request(
-            method=self.method,
-            url=self.url,
-            **kwargs
-        )
+        # 发送请求，支持重试
+        response = None
+        for attempt in range(self.retry + 1):
+            try:
+                response = requests.request(
+                    method=self.method,
+                    url=self.url,
+                    **kwargs
+                )
+                break
+            except Exception as e:
+                if attempt == self.retry:
+                    raise
+
+        # 保存到文件
+        if self.output_file and response:
+            with open(self.output_file, 'wb') as f:
+                f.write(response.content)
 
         return response
 
 
-def parse_and_execute(curl_command: str) -> requests.Response:
+def request(curl_command: str) -> requests.Response:
     """便捷函数：解析并执行 curl 命令"""
     parser = CurlParser(curl_command)
     parser.parse()
     return parser.execute()
+
+
+def to_curl(req):
+    return curlify.to_curl(req)
