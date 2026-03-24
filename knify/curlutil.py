@@ -3,9 +3,11 @@
 # Author: qicongsheng
 import shlex
 from typing import Dict, Any
-from knify import warnutil
+
 import curlify
 import requests
+
+from knify import warnutil
 
 
 class CurlParser:
