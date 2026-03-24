@@ -1,212 +1,259 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
 # Author: qicongsheng
-import re
-from typing import Optional, List, Tuple
+import shlex
+from typing import Dict, Any
 
 import curlify
 import requests
-import uncurl
-from requests.auth import HTTPBasicAuth
-
-from knify import warnutil
 
 
-def request(curl_command: str) -> Optional[requests.Response]:
-    """
-    解析 curl 命令并发送请求，支持以下参数：
-    - --insecure/-k
-    - --location/-L
-    - --user-agent/-A
-    - --cookie/-b
-    - --form/-F
-    - --form-string
-    - --referer/-e
-    - --user
-    - --output/-o
-    - --retry
-    - --connect-timeout
-    - --max-time
-    - --request/-X
-    - --data-urlencode
-    :param curl_command: curl 命令字符串
-    :return: 响应对象
-    """
-    warnutil.disable_ssl_warnings()
-    # 使用正则表达式匹配参数
-    insecure_pattern = re.compile(r'\s(--insecure|-k)\s', re.MULTILINE)
-    location_pattern = re.compile(r'\s(--location|-L)\s', re.MULTILINE)
-    user_agent_pattern = re.compile(r'\s(--user-agent|-A)\s+["\']?([^"\'\s]+)["\']?', re.MULTILINE)
-    cookie_pattern = re.compile(r'\s(--cookie|-b)\s+["\']?([^"\']+)["\']?', re.MULTILINE)
-    form_pattern = re.compile(r'\s(--form|-F)\s+["\']?([^"\'\s]+)["\']?', re.MULTILINE)
-    form_string_pattern = re.compile(r'\s--form-string\s+["\']?([^"\'\s]+)["\']?', re.MULTILINE)
-    referer_pattern = re.compile(r'\s(--referer|-e)\s+["\']?([^"\'\s]+)["\']?', re.MULTILINE)
-    user_pattern = re.compile(r'\s--user\s+["\']?([^"\'\s]+)["\']?', re.MULTILINE)
-    output_pattern = re.compile(r'\s(--output|-o)\s+["\']?([^"\'\s]+)["\']?', re.MULTILINE)
-    retry_pattern = re.compile(r'\s--retry\s+(\d+)', re.MULTILINE)
-    connect_timeout_pattern = re.compile(r'\s--connect-timeout\s+(\d+)', re.MULTILINE)
-    max_time_pattern = re.compile(r'\s--max-time\s+(\d+)', re.MULTILINE)
-    request_method_pattern = re.compile(r'\s(--request|-X)\s+([A-Za-z]+)', re.MULTILINE)
-    # 新增：解析 --data-urlencode 参数
-    data_urlencode_pattern = re.compile(r'\s--data-urlencode\s+["\']?([^"\'\s]+)["\']?', re.MULTILINE)
+class CurlParser:
+    """解析 curl 命令并执行 requests 请求"""
 
-    # 检查是否包含参数
-    verify_ssl = not bool(insecure_pattern.search(curl_command))
-    follow_redirects = bool(location_pattern.search(curl_command))
-    user_agent = user_agent_pattern.search(curl_command)
-    cookie = cookie_pattern.search(curl_command)
-    form = form_pattern.search(curl_command)
-    form_string = form_string_pattern.search(curl_command)
-    referer = referer_pattern.search(curl_command)
-    user = user_pattern.search(curl_command)
-    output_file = output_pattern.search(curl_command)
-    retry = retry_pattern.search(curl_command)
-    connect_timeout = connect_timeout_pattern.search(curl_command)
-    max_time = max_time_pattern.search(curl_command)
-    request_method = request_method_pattern.search(curl_command)
-    # 新增：解析所有 --data-urlencode 参数
-    data_urlencode_matches = data_urlencode_pattern.findall(curl_command)
+    def __init__(self, curl_command: str):
+        self.curl_command = curl_command
+        self.url = None
+        self.method = 'GET'
+        self.headers = {}
+        self.data = None
+        self.params = {}
+        self.files = {}
+        self.auth = None
+        self.cookies = {}
+        self.timeout = None
+        self.allow_redirects = True
+        self.verify = True
+        self.proxies = {}
+        self.output_file = None
+        self.retry = 0
 
-    # 移除参数，避免 uncurl 解析失败
-    curl_command = insecure_pattern.sub(' ', curl_command)
-    curl_command = location_pattern.sub(' ', curl_command)
-    curl_command = user_agent_pattern.sub(' ', curl_command)
-    curl_command = cookie_pattern.sub(' ', curl_command)
-    curl_command = form_pattern.sub(' ', curl_command)
-    curl_command = form_string_pattern.sub(' ', curl_command)
-    curl_command = referer_pattern.sub(' ', curl_command)
-    curl_command = user_pattern.sub(' ', curl_command)
-    curl_command = output_pattern.sub(' ', curl_command)
-    curl_command = retry_pattern.sub(' ', curl_command)
-    curl_command = connect_timeout_pattern.sub(' ', curl_command)
-    curl_command = max_time_pattern.sub(' ', curl_command)
-    curl_command = request_method_pattern.sub(' ', curl_command)
-    # 新增：移除 --data-urlencode 参数
-    curl_command = data_urlencode_pattern.sub(' ', curl_command)
+    def parse(self) -> 'CurlParser':
+        """解析 curl 命令"""
+        # 移除 curl 命令开头
+        cmd = self.curl_command.strip()
+        if cmd.startswith('curl '):
+            cmd = cmd[5:]
 
-    # 使用 uncurl 解析 curl 命令
-    context = uncurl.parse_context(curl_command)
-    url = context.url
-    headers = context.headers
-    data = context.data
-    header_cookies = context.cookies
-    method = context.method.lower() if context.method else 'get'
-
-    # 如果 --request/-X 参数存在，覆盖默认的请求方法
-    if request_method:
-        method = request_method.group(2).lower()
-
-    # 处理 --user-agent/-A
-    if user_agent:
-        headers['User-Agent'] = user_agent.group(2)
-
-    # 处理 --cookie/-b
-    if cookie:
-        headers['Cookie'] = cookie.group(2)
-
-    if header_cookies:
-        headers['Cookie'] = '; '.join([f'{key}={value}' for key, value in context.cookies.items()])
-
-    # 处理 --form/-F 和 --form-string
-    files = None
-    if form or form_string:
-        # 如果存在 --form 或 --form-string，构建 multipart/form-data
-        files = {}
-        if form:
-            # 处理 --form 参数（文件上传）
-            form_data = form.group(2)
-            if form_data.startswith('@'):
-                # 文件上传
-                file_path = form_data[1:]
-                with open(file_path, 'rb') as f:
-                    files['file'] = (file_path, f.read())
-            else:
-                # 普通表单字段
-                key, value = form_data.split('=', 1)
-                files[key] = (None, value)
-        if form_string:
-            # 处理 --form-string 参数（字符串表单字段）
-            form_string_data = form_string.group(1)
-            key, value = form_string_data.split('=', 1)
-            files[key] = (None, value)
-        data = None  # 清空 data，因为表单数据通过 files 发送
-
-    # 新增：处理 --data-urlencode 参数
-    urlencoded_data = None
-    if data_urlencode_matches and not files:
-        # 只处理没有 multipart 表单的情况
-        urlencoded_params: List[Tuple[str, str]] = []
-        for item in data_urlencode_matches:
-            if '=' in item:
-                key, value = item.split('=', 1)
-                urlencoded_params.append((key, value))
-            else:
-                # 没有键，只有值
-                urlencoded_params.append(('', item))
-        urlencoded_data = urlencoded_params
-
-    # 处理 --referer/-e
-    if referer:
-        headers['Referer'] = referer.group(2)
-
-    # 处理 --user
-    if user:
-        username, password = user.group(1).split(':', 1)
-        auth = HTTPBasicAuth(username, password)
-    else:
-        auth = None
-
-    # 处理 --retry
-    retries = int(retry.group(1)) if retry else 0
-
-    # 处理 --connect-timeout 和 --max-time
-    timeout = None
-    if connect_timeout or max_time:
-        connect_timeout_value = int(connect_timeout.group(1)) if connect_timeout else None
-        max_time_value = int(max_time.group(1)) if max_time else None
-        timeout = (connect_timeout_value, max_time_value)
-
-    # 使用 requests.request 发送请求
-    for attempt in range(retries + 1):
+        # 使用 shlex 分割命令，保留引号内容
         try:
-            # 如果有 URL 编码数据，优先使用它
-            if urlencoded_data:
-                response = requests.request(
-                    method,
-                    url,
-                    headers=headers,
-                    data=urlencoded_data,
-                    auth=auth,
-                    allow_redirects=follow_redirects,
-                    verify=verify_ssl,
-                    timeout=timeout
-                )
+            parts = shlex.split(cmd)
+        except ValueError:
+            # 如果分割失败，尝试简单分割
+            parts = cmd.split()
+
+        i = 0
+        while i < len(parts):
+            part = parts[i]
+
+            # URL (没有 - 开头的参数)
+            if not part.startswith('-') and not self.url:
+                self.url = part.strip('\'"')
+                i += 1
+                continue
+
+            # -X, --request: HTTP 方法
+            if part in ['-X', '--request']:
+                self.method = parts[i + 1].upper()
+                i += 2
+                continue
+
+            # -H, --header: 请求头
+            if part in ['-H', '--header']:
+                header = parts[i + 1]
+                if ':' in header:
+                    key, value = header.split(':', 1)
+                    self.headers[key.strip()] = value.strip()
+                i += 2
+                continue
+
+            # -d, --data, --data-raw, --data-binary: 请求体
+            if part in ['-d', '--data', '--data-raw', '--data-binary', '--data-urlencode']:
+                self.data = parts[i + 1]
+                if self.method == 'GET':
+                    self.method = 'POST'
+                i += 2
+                continue
+
+            # -F, --form: 表单数据
+            if part in ['-F', '--form']:
+                form_data = parts[i + 1]
+                if '=@' in form_data:
+                    # 文件上传
+                    key, filepath = form_data.split('=@', 1)
+                    self.files[key] = open(filepath, 'rb')
+                else:
+                    # 普通表单字段
+                    if '=' in form_data:
+                        key, value = form_data.split('=', 1)
+                        if not self.data:
+                            self.data = {}
+                        if isinstance(self.data, dict):
+                            self.data[key] = value
+                i += 2
+                continue
+
+            # --form-string: 表单字符串数据
+            if part == '--form-string':
+                form_data = parts[i + 1]
+                if '=' in form_data:
+                    key, value = form_data.split('=', 1)
+                    if not self.data:
+                        self.data = {}
+                    if isinstance(self.data, dict):
+                        self.data[key] = value
+                i += 2
+                continue
+
+            # -u, --user: 认证
+            if part in ['-u', '--user']:
+                auth_str = parts[i + 1]
+                if ':' in auth_str:
+                    username, password = auth_str.split(':', 1)
+                    self.auth = (username, password)
+                i += 2
+                continue
+
+            # -b, --cookie: Cookie
+            if part in ['-b', '--cookie']:
+                cookie_str = parts[i + 1]
+                for cookie in cookie_str.split(';'):
+                    if '=' in cookie:
+                        key, value = cookie.split('=', 1)
+                        self.cookies[key.strip()] = value.strip()
+                i += 2
+                continue
+
+            # -A, --user-agent: User-Agent
+            if part in ['-A', '--user-agent']:
+                self.headers['User-Agent'] = parts[i + 1]
+                i += 2
+                continue
+
+            # -e, --referer: Referer
+            if part in ['-e', '--referer']:
+                self.headers['Referer'] = parts[i + 1]
+                i += 2
+                continue
+
+            # --compressed: 接受压缩
+            if part == '--compressed':
+                self.headers['Accept-Encoding'] = 'gzip, deflate, br'
+                i += 1
+                continue
+
+            # -L, --location: 跟随重定向
+            if part in ['-L', '--location']:
+                self.allow_redirects = True
+                i += 1
+                continue
+
+            # -k, --insecure: 不验证 SSL
+            if part in ['-k', '--insecure']:
+                self.verify = False
+                i += 1
+                continue
+
+            # -x, --proxy: 代理
+            if part in ['-x', '--proxy']:
+                proxy = parts[i + 1]
+                self.proxies = {'http': proxy, 'https': proxy}
+                i += 2
+                continue
+
+            # --max-time, --connect-timeout: 超时
+            if part in ['--max-time', '--connect-timeout', '-m']:
+                self.timeout = float(parts[i + 1])
+                i += 2
+                continue
+
+            # -G, --get: 强制 GET
+            if part in ['-G', '--get']:
+                self.method = 'GET'
+                i += 1
+                continue
+
+            # -o, --output: 输出到文件
+            if part in ['-o', '--output']:
+                self.output_file = parts[i + 1]
+                i += 2
+                continue
+
+            # --retry: 重试次数
+            if part == '--retry':
+                self.retry = int(parts[i + 1])
+                i += 2
+                continue
+
+            i += 1
+
+        return self
+
+    def execute(self) -> requests.Response:
+        """执行请求并返回响应"""
+        if not self.url:
+            raise ValueError("未找到 URL")
+
+        # 构建请求参数
+        kwargs: Dict[str, Any] = {
+            'headers': self.headers,
+            'cookies': self.cookies,
+            'allow_redirects': self.allow_redirects,
+            'verify': self.verify,
+        }
+
+        if self.auth:
+            kwargs['auth'] = self.auth
+
+        if self.timeout:
+            kwargs['timeout'] = self.timeout
+
+        if self.proxies:
+            kwargs['proxies'] = self.proxies
+
+        if self.files:
+            kwargs['files'] = self.files
+
+        # 处理请求体
+        if self.data:
+            if isinstance(self.data, str):
+                # 尝试解析为 JSON
+                if self.data.startswith('{') or self.data.startswith('['):
+                    kwargs['data'] = self.data
+                    if 'Content-Type' not in self.headers:
+                        self.headers['Content-Type'] = 'application/json'
+                else:
+                    kwargs['data'] = self.data
             else:
+                kwargs['data'] = self.data
+
+        # 发送请求，支持重试
+        response = None
+        for attempt in range(self.retry + 1):
+            try:
                 response = requests.request(
-                    method,
-                    url,
-                    headers=headers,
-                    data=data,
-                    files=files,
-                    auth=auth,
-                    allow_redirects=follow_redirects,
-                    verify=verify_ssl,
-                    timeout=timeout
+                    method=self.method,
+                    url=self.url,
+                    **kwargs
                 )
-            break
-        except requests.exceptions.RequestException as e:
-            if attempt == retries:
-                raise e
-            print(f"Retrying ({attempt + 1}/{retries})...")
+                break
+            except Exception as e:
+                if attempt == self.retry:
+                    raise
 
-    # 处理 --output/-o 参数，将响应内容保存到文件
-    if output_file:
-        output_path = output_file.group(2)
-        with open(output_path, 'wb') as f:
-            f.write(response.content)
-        print(f"Response content saved to {output_path}")
+        # 保存到文件
+        if self.output_file and response:
+            with open(self.output_file, 'wb') as f:
+                f.write(response.content)
 
-    return response
+        return response
+
+
+def request(curl_command: str) -> requests.Response:
+    """便捷函数：解析并执行 curl 命令"""
+    parser = CurlParser(curl_command)
+    parser.parse()
+    return parser.execute()
 
 
 def to_curl(req):
