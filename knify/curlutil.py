@@ -3,7 +3,7 @@
 # Author: qicongsheng
 import shlex
 from typing import Dict, Any
-
+from knify import warnutil
 import curlify
 import requests
 
@@ -251,6 +251,8 @@ class CurlParser:
 
 def request(curl_command: str) -> requests.Response:
     """便捷函数：解析并执行 curl 命令"""
+    warnutil.disable_ssl_warnings()
+    warnutil.disable_ignore_warnings()
     parser = CurlParser(curl_command)
     parser.parse()
     return parser.execute()
