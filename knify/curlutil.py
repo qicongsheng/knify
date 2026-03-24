@@ -25,7 +25,7 @@ class CurlParser:
         self.cookies = {}
         self.timeout = None
         self.allow_redirects = True
-        self.verify = True
+        self.verify = False
         self.proxies = {}
         self.output_file = None
         self.retry = 0
