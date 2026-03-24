@@ -252,7 +252,8 @@ class CurlParser:
 
         # 保存到文件
         if self.remote_name and not self.output_file:
-            self.output_file = self.url.rstrip('/').split('/')[-1] or 'output'
+            filename = self.url.rstrip('/').split('/')[-1].split('?')[0]
+            self.output_file = filename or 'output'
         if self.output_file and response:
             with open(self.output_file, 'wb') as f:
                 f.write(response.content)
