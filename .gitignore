@@ -1,0 +1,11 @@
+.DS_Store
+.idea
+.venv
+dist
+*.iml
+*/target
+*.egg-info
+logs/*
+*/src/swagger
+*/src/swagger.md
+rebel.xml
