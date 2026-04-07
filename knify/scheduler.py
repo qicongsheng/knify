@@ -10,6 +10,7 @@ from pytz import timezone
 from knify import logger
 from knify.apscheduler.schedulers.blocking import BlockingScheduler
 from knify.apscheduler.triggers.cron import CronTrigger
+from knify.apscheduler.util import undefined
 
 
 class BlockingPolicy(Enum):
@@ -55,7 +56,7 @@ class TaskScheduler:
             'blocking_policy': blocking_policy
         }
 
-        next_run_time = datetime.now(self.scheduler.timezone) if run_immediately else None
+        next_run_time = datetime.now(self.scheduler.timezone) if run_immediately else undefined
         policy_kwargs = self.get_policy_kwargs_by_policy(blocking_policy)
         job = self.scheduler.add_job(func,
                                      CronTrigger.from_crontab(cron_expression, timezone=timezone('Asia/Shanghai')),
