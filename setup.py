@@ -24,6 +24,7 @@ setup(
         'pytz',
         'requests',
         'curlify',
+        'tzdata',
         'xlrd'
     ]
 )
