@@ -51,7 +51,7 @@ def generate_sql_from_json(json_data, sql_template, filter_func=None, preprocess
             row_data = preprocess_func(row_data)
 
         # 如果提供了过滤函数，并且过滤函数返回True，则跳过该行
-        if filter_func and filter_func(row_data):
+        if filter_func and not filter_func(row_data):
             continue
         for key, value in row_data.items():
             # 处理空值

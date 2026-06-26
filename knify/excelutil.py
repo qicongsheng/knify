@@ -355,7 +355,7 @@ def process_data(excel_file, process_func, filter_func=None, preprocess_func=Non
     通用的数据处理工具，支持从Excel文件中读取数据并进行处理。
     :param excel_file: Excel文件路径
     :param process_func: 数据处理函数，用于生成最终结果
-    :param filter_func: 过滤函数，用于判断哪些数据行需要跳过（可选）
+    :param filter_func: 过滤函数，用于判断哪些数据行不需要跳过（可选）
     :param preprocess_func: 预处理函数，用于对列数据进行处理（可选）
     :param postprocess_func: 后置处理函数，用于对生成的结果进行处理（可选）
     :param header_row: Excel文件中表头的行号，默认为1（openpyxl的行号从1开始）
@@ -392,8 +392,8 @@ def process_data(excel_file, process_func, filter_func=None, preprocess_func=Non
         if preprocess_func:
             row_data = preprocess_func(row_data)
 
-        # 如果提供了过滤函数，并且过滤函数返回True，则跳过该行
-        if filter_func and filter_func(row_data):
+        # 如果提供了过滤函数，并且过滤函数返回True，则不跳过该行
+        if filter_func and not filter_func(row_data):
             continue
 
         # 调用数据处理函数生成结果
