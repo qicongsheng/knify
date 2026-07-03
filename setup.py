@@ -25,6 +25,7 @@ setup(
         'requests',
         'curlify',
         'tzdata',
-        'xlrd'
+        'xlrd',
+        'croniter'
     ]
 )
