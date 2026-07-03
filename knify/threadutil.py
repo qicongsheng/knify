@@ -5,7 +5,7 @@ import datetime
 import threading
 import traceback
 
-from knify import dateutil
+from knify import dtutil
 from knify import listutil
 from knify import logger
 
@@ -30,14 +30,14 @@ class PartitionExecutor:
         self.task_info = {'total': 0, 'processed': 0, 'time_start': None}
 
     def print_task(self):
-        time_used = dateutil.now() - self.task_info['time_start']
+        time_used = dtutil.now() - self.task_info['time_start']
         time_estimate = datetime.timedelta(
             seconds=time_used.total_seconds() * (self.task_info['total'] / self.task_info['processed']))
         logger.info("Process: %.2f%% [%s/%s], Estimate: [%s/%s]\r\n" % (
             self.task_info['processed'] / self.task_info['total'] * 100, self.task_info['processed'],
             self.task_info['total'],
-            dateutil.date_to_str(time_used, dateutil.FORMAT_HMS),
-            dateutil.date_to_str(time_estimate, dateutil.FORMAT_HMS)))
+            dtutil.date_to_str(time_used, dtutil.FORMAT_HMS),
+            dtutil.date_to_str(time_estimate, dtutil.FORMAT_HMS)))
 
     def func_wrapper(self, list_objs_: list, _func_) -> None:
         _func_(list_objs_)
@@ -50,7 +50,7 @@ class PartitionExecutor:
         threads = []
         logger.info("==================== start ====================")
         self.task_info['total'] = len(list_obj)
-        self.task_info['time_start'] = dateutil.now()
+        self.task_info['time_start'] = dtutil.now()
         for index_, list_for_process in enumerate(list_partition):
             t = threading.Thread(target=self.func_wrapper, args=(list_for_process, _func_))
             t.start()
