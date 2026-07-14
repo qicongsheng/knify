@@ -164,8 +164,13 @@ def compare_(file1_path, file2_path, output_path, key_column, sheet_index=0,
     other_headers = [h for h in headers1 if h != key_column]
 
     # 构建数据字典
+    def normalize_key(key):
+        if isinstance(key, float) and key.is_integer():
+            return str(int(key))
+        return "" if key is None else str(key)
+
     def build_data_dict(data_rows):
-        return {row[key_index]: row for row in data_rows}
+        return {normalize_key(row[key_index]): row for row in data_rows}
 
     data1 = build_data_dict(data1_rows)
     data2 = build_data_dict(data2_rows)
